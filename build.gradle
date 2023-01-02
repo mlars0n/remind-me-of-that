@@ -1,0 +1,68 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.7'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'com.vaadin' version '23.3.1'
+}
+
+defaultTasks("clean", "build")
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.17'
+
+repositories {
+	mavenCentral()
+
+	maven {
+		url "https://maven.vaadin.com/vaadin-addons"
+	}
+
+	maven { url 'https://repo.spring.io/release' }
+
+	flatDir {
+		dirs 'ext-lib'
+	}
+}
+
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+}
+
+dependencies {
+	implementation 'com.vaadin:vaadin-spring-boot-starter'
+	//implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	//implementation 'org.springframework.boot:spring-boot-starter-security'
+	//implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	//implementation 'org.springframework.boot:spring-boot-starter-quartz'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.liquibase:liquibase-core:4.17.2'
+	//implementation 'org.postgresql:postgresql:42.5.1'
+
+	//Local jars
+	implementation fileTree(dir: 'ext-lib', include: '*.jar')
+
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "com.vaadin:vaadin-bom:$vaadinVersion"
+	}
+}
+
+test {
+	useJUnitPlatform()
+}
+
+vaadin {
+	pnpmEnable = false
+}
