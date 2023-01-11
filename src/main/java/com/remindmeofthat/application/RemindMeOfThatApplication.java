@@ -8,9 +8,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Properties;
+
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
-//@EnableJpaRepositories("com.remindmeofthat.repository")
-//@EnableTransactionManagement
 @ComponentScan(basePackages = "com.remindmeofthat")
 @EnableVaadin(value = "com.remindmeofthat.web") //Where the Vaadin components live
 public class RemindMeOfThatApplication {
@@ -24,7 +28,7 @@ public class RemindMeOfThatApplication {
 
 	public static void main(String[] args) {
 
-		/*//Check if the env.config file exists as pointed to by a "config.file" Java system property
+		//Check if the env.config file exists as pointed to by a "config.file" Java system property
 		String configFileLocation = System.getProperty(CONFIG_FILE_SYSTEM_PROPERTY_NAME);
 		if (configFileLocation!= null) {
 
@@ -75,7 +79,7 @@ public class RemindMeOfThatApplication {
 		if (System.getProperty(DB_PASSWORD_ENV_VAR_NAME) == null && System.getenv(DB_PASSWORD_ENV_VAR_NAME) == null) {
 			logger.error("Error: missing DB password property [{}]. Exiting." + errorMsgSolutionText, DB_PASSWORD_ENV_VAR_NAME);
 			System.exit(1);
-		}*/
+		}
 
 		//Got the variables we need, proceed
 		SpringApplication.run(RemindMeOfThatApplication.class, args);

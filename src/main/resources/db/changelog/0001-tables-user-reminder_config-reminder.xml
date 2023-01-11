@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+        http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-4.3.xsd">
+
+    <!--Set up the main table to hold a domain (hosted zone in AWS) that will be a parent to subdomain records-->
+    <changeSet  id="0001"  author="mlarson">
+
+        <!-- Main user table -->
+        <createTable tableName="user">
+            <!--Primary key-->
+            <column name="id"  type="bigint"  autoIncrement="true">
+                <constraints  primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="email"  type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="given_name"  type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="family_name"  type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+
+        </createTable>
+
+        <!-- A reminder configuration -->
+        <createTable tableName="reminder_config">
+            <!--Primary key-->
+            <column  name="id"  type="bigint"  autoIncrement="true">
+                <constraints  primaryKey="true" nullable="false"/>
+            </column>
+
+            <!--subject of the reminder-->
+            <column name="body"  type="text">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <!--text of the reminder-->
+            <column name="body"  type="text">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="given_name"  type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="family_name"  type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
