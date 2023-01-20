@@ -1,6 +1,7 @@
 package com.remindmeofthat.application;
 
 import com.vaadin.flow.spring.annotation.EnableVaadin;
+import com.vaadin.flow.theme.Theme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -17,6 +18,7 @@ import java.util.Properties;
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
 @ComponentScan(basePackages = "com.remindmeofthat")
 @EnableVaadin(value = "com.remindmeofthat.web") //Where the Vaadin components live
+@Theme(value = "app-theme")
 public class RemindMeOfThatApplication {
 
 	public static final Logger logger = LoggerFactory.getLogger(RemindMeOfThatApplication.class);

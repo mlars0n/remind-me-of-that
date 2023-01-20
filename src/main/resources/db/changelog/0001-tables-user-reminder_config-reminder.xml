@@ -40,24 +40,46 @@
             </column>
 
             <!--subject of the reminder-->
-            <column name="body"  type="text">
-                <constraints nullable="false" unique="true"/>
+            <column name="subject"  type="varchar(1000)">
+                <constraints nullable="false"/>
             </column>
 
             <!--text of the reminder-->
             <column name="body"  type="text">
-                <constraints nullable="false" unique="true"/>
-            </column>
-
-            <column name="given_name"  type="varchar(500)">
                 <constraints nullable="true"/>
             </column>
 
-            <column name="family_name"  type="varchar(500)">
+            <column name="recurring"  type="boolean">
                 <constraints nullable="true"/>
+            </column>
+
+            <!--Later on we will need a table to capture the recurring period-->
+
+            <!--FK pointer back to user-->
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_user_user_id" references="user(id)"/>
             </column>
 
         </createTable>
+
+        <!-- Table to store actual reminders -->
+        <createTable tableName="reminder">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="reminder_time" type="timestamp(3)"/>
+
+            <column name="sent" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+
+            <!--FK pointer back to reminder config-->
+            <column name="reminder_config_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_reminder_reminder_config_id" references="reminder_config(id)"/>
+            </column>
+        </createTable>
+        
     </changeSet>
 
 </databaseChangeLog>
