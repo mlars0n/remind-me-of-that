@@ -1,8 +1,6 @@
 package com.remindmeofthat.web;
 
 import com.vaadin.flow.component.applayout.AppLayout;
-import com.vaadin.flow.component.applayout.DrawerToggle;
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
@@ -19,14 +17,16 @@ public class ParentLayoutView extends AppLayout {
         //Whether the navbar or drawer is primary
         setPrimarySection(Section.NAVBAR);
 
-        addToNavbar(new DrawerToggle(), new Span("RemindMeOfThat Admin"));
+        addToNavbar(new Span("RemindMeOfThat"));
 
         RouterLink apiDataRouterLink = new RouterLink("Home", HomeView.class);
+        RouterLink apiDataRouterLink2 = new RouterLink("About Us", AboutUs.class);
 
         Tab apiDataViewTab = new Tab(apiDataRouterLink);
+        Tab apiDataViewTab2 = new Tab(apiDataRouterLink2);
 
-        Tabs tabs = new Tabs(apiDataViewTab);
-        tabs.setOrientation(Tabs.Orientation.VERTICAL);
-        addToDrawer(tabs);
+        Tabs tabs = new Tabs(apiDataViewTab, apiDataViewTab2);
+        tabs.setOrientation(Tabs.Orientation.HORIZONTAL);
+        addToNavbar(tabs);
     }
 }
