@@ -21,7 +21,7 @@ public class ReminderConfig {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private ReminderUser user;
 
     @OneToMany(mappedBy="reminderConfig")
     private Set<Reminder> reminders;
@@ -59,11 +59,11 @@ public class ReminderConfig {
         this.recurring = recurring;
     }
 
-    public User getUser() {
+    public ReminderUser getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(ReminderUser user) {
         this.user = user;
     }
 }

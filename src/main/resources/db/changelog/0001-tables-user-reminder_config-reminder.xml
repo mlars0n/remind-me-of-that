@@ -12,7 +12,7 @@
     <changeSet  id="0001"  author="mlarson">
 
         <!-- Main user table -->
-        <createTable tableName="user">
+        <createTable tableName="reminder_user">
             <!--Primary key-->
             <column name="id"  type="bigint"  autoIncrement="true">
                 <constraints  primaryKey="true" nullable="false"/>
@@ -27,6 +27,16 @@
             </column>
 
             <column name="family_name"  type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Link ID to the reminder -->
+            <column name="link_id"  type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- When the link was created -->
+            <column name="link_created_date"  type="timestamp(3)">
                 <constraints nullable="true"/>
             </column>
 
@@ -57,7 +67,7 @@
 
             <!--FK pointer back to user-->
             <column name="user_id" type="bigint">
-                <constraints nullable="false" foreignKeyName="fk_user_user_id" references="user(id)"/>
+                <constraints nullable="false" foreignKeyName="fk_user_user_id" references="reminder_user(id)"/>
             </column>
 
         </createTable>

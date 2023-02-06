@@ -1,10 +1,11 @@
 package com.remindmeofthat.data.model;
 import javax.persistence.*;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
-@Table(name = "user")
-public class User {
+@Table(name = "reminder_user")
+public class ReminderUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,6 +20,12 @@ public class User {
 
     @Column(name = "family_name", nullable = true)
     private String familyName;
+
+    @Column(name ="link_id", nullable = true)
+    private String linkId;
+
+    @Column(name ="link_created_date", nullable = true)
+    private OffsetDateTime linkCreatedDate;
 
     @OneToMany(mappedBy="user")
     private Set<ReminderConfig> reminderConfigs;
@@ -60,6 +67,22 @@ public class User {
 
     public void setReminderConfigs(Set<ReminderConfig> reminderConfigs) {
         this.reminderConfigs = reminderConfigs;
+    }
+
+    public String getLinkId() {
+        return linkId;
+    }
+
+    public void setLinkId(String linkId) {
+        this.linkId = linkId;
+    }
+
+    public OffsetDateTime getLinkCreatedDate() {
+        return linkCreatedDate;
+    }
+
+    public void setLinkCreatedDate(OffsetDateTime linkCreatedDate) {
+        this.linkCreatedDate = linkCreatedDate;
     }
 }
 
