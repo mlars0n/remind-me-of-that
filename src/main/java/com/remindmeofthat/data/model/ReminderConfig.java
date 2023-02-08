@@ -51,7 +51,7 @@ public class ReminderConfig {
         this.body = body;
     }
 
-    public boolean isRecurring() {
+    public boolean getRecurring() {
         return recurring;
     }
 
