@@ -66,6 +66,18 @@ public class ReminderConfig {
     public void setUser(ReminderUser user) {
         this.user = user;
     }
+
+    @Override
+    public String toString() {
+        return "ReminderConfig{" +
+                "id=" + id +
+                ", subject='" + subject + '\'' +
+                ", body='" + body + '\'' +
+                ", recurring=" + recurring +
+                ", user=" + user +
+                ", reminders=" + reminders +
+                '}';
+    }
 }
 
 
