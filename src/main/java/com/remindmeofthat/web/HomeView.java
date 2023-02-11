@@ -1,7 +1,6 @@
 package com.remindmeofthat.web;
 
-import com.remindmeofthat.data.model.ReminderUser;
-import com.remindmeofthat.service.ReminderService;
+import com.remindmeofthat.service.ReminderUserService;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
@@ -24,7 +23,7 @@ public class HomeView extends VerticalLayout {
 
     private static Logger logger = LoggerFactory.getLogger(HomeView.class);
 
-    ReminderService reminderService;
+    ReminderUserService reminderService;
 
     //Layout and page items
     VerticalLayout textVerticalLayout = new VerticalLayout();
@@ -33,7 +32,7 @@ public class HomeView extends VerticalLayout {
     TextField collectEmail = new TextField("Email");
     Button submitButton = new Button("Submit", this::emailButtonListener);
 
-    public HomeView(@Autowired ReminderService reminderService) {
+    public HomeView(@Autowired ReminderUserService reminderService) {
         this.reminderService = reminderService;
         completeSetup();
     }

@@ -4,18 +4,18 @@ import com.remindmeofthat.data.model.ReminderConfig;
 import com.remindmeofthat.data.model.ReminderUser;
 import com.remindmeofthat.data.repository.ReminderConfigRepository;
 import com.remindmeofthat.data.repository.ReminderUserRepository;
-import com.remindmeofthat.service.ReminderService;
+import com.remindmeofthat.service.ReminderManagementService;
+import com.remindmeofthat.service.ReminderUserService;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -25,6 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 @Route(value = "edit/:linkId", layout = ParentLayoutView.class)
@@ -33,13 +37,17 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     private static final Logger logger = LoggerFactory.getLogger(EditReminderView.class);
 
-    private final ReminderService reminderService;
+    private final ReminderUserService reminderService;
     private final ReminderUserRepository reminderUserRepository;
 
     private final ReminderConfigRepository reminderConfigRepository;
 
+    private final ReminderManagementService reminderManagementService;
+
     private String linkId;
     private ReminderUser reminderUser;
+
+    private int timeZoneOffset;
 
     private ReminderConfig reminderConfig; // The current reminder config being worked on
 
@@ -52,17 +60,24 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     Checkbox recurring = new Checkbox();
 
-    DatePicker reminderDate = new DatePicker("Reminder Date");
+    DateTimePicker reminderDate = new DateTimePicker("Reminder Date and Time");
 
     Button save = new Button("Save");
     Button cancel = new Button("Cancel");
     Button delete = new Button(new Icon(VaadinIcon.TRASH));
 
-    public EditReminderView(@Autowired ReminderService reminderService, @Autowired ReminderUserRepository reminderUserRepository,
-                            @Autowired ReminderConfigRepository reminderConfigRepository) {
+    public EditReminderView(@Autowired ReminderUserService reminderService, @Autowired ReminderUserRepository reminderUserRepository,
+                            @Autowired ReminderConfigRepository reminderConfigRepository, @Autowired ReminderManagementService reminderManagementService) {
         this.reminderService = reminderService;
         this.reminderUserRepository = reminderUserRepository;
         this.reminderConfigRepository = reminderConfigRepository;
+        this.reminderManagementService = reminderManagementService;
+
+        //Get the extended client side details
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(details -> {
+            timeZoneOffset = details.getTimezoneOffset() / 60 / 60 / 1000;
+            logger.debug("Your time zone offset: " + timeZoneOffset);
+        });
     }
 
     @Override
@@ -124,8 +139,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         VerticalLayout dialogLayout = new VerticalLayout();
 
-        subject.setWidth("28em");
-        body.setWidth("32em");
+        subject.setWidth("30em");
+        body.setWidth("30em");
         body.setHeight("250px");
 
         //Make this field resizable
@@ -134,7 +149,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         recurring.setLabel("Repeats");
 
-        dialogLayout.add(subject, body, recurring, reminderDate, createDialogButtons());
+        dialogLayout.add(subject, body, reminderDate, createDialogButtons());
         editReminderConfigDialog.add(dialogLayout);
     }
 
@@ -158,10 +173,19 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
                 //Write this back to the binder object
                 binder.writeBean(reminderConfig);
 
-                logger.debug("Saving reminder config [{}]", reminderConfig);
+                // Get the local date and time from the DateTimePicker
+                LocalDateTime localDateTime = reminderDate.getValue();
+
+                // Convert the timezone offset to a ZoneOffset object
+                ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
+
+                // Convert the local date and time to an OffsetDateTime object
+                OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, zoneOffset);
+
+                logger.debug("Saving reminder config [{}] with reminder date/time of [{}]", reminderConfig, offsetDateTime);
 
                 //Save this to the database
-                //reminderConfigRepository.save(reminderConfig);
+                //reminderManagementService.createReminders(reminderConfig, offsetDateTime);
 
                 //Close the dialog and update the items in the list
                 editReminderConfigDialog.close();

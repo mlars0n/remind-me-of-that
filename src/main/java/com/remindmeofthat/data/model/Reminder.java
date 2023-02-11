@@ -1,7 +1,7 @@
 package com.remindmeofthat.data.model;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "reminder")
@@ -11,7 +11,7 @@ public class Reminder {
     private Long id;
 
     @Column(name = "reminder_time")
-    private Timestamp reminderTime;
+    private OffsetDateTime reminderTime;
 
     @Column(name = "sent", nullable = false)
     private boolean sent;
@@ -29,11 +29,11 @@ public class Reminder {
         this.id = id;
     }
 
-    public Timestamp getReminderTime() {
+    public OffsetDateTime getReminderTime() {
         return reminderTime;
     }
 
-    public void setReminderTime(Timestamp reminderTime) {
+    public void setReminderTime(OffsetDateTime reminderTime) {
         this.reminderTime = reminderTime;
     }
 

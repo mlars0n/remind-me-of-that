@@ -9,14 +9,14 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Service to handle reminder creation and other reminder services
+ * Service to handle reminder user system actions
  */
 @Service
-public class ReminderService {
+public class ReminderUserService {
 
     private ReminderUserRepository reminderUserRepository;
 
-    public ReminderService(@Autowired ReminderUserRepository reminderUserRepository) {
+    public ReminderUserService(@Autowired ReminderUserRepository reminderUserRepository) {
         this.reminderUserRepository = reminderUserRepository;
     }
 
