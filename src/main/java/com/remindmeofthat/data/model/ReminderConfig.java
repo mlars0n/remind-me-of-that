@@ -21,9 +21,9 @@ public class ReminderConfig {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private ReminderUser user;
+    private ReminderUser reminderUser;
 
-    @OneToMany(mappedBy="reminderConfig")
+    @OneToMany(mappedBy="reminderConfig", cascade = {CascadeType.ALL, CascadeType.MERGE})
     private Set<Reminder> reminders;
 
     // Getters and setters for the fields
@@ -51,6 +51,7 @@ public class ReminderConfig {
         this.body = body;
     }
 
+
     public boolean getRecurring() {
         return recurring;
     }
@@ -59,12 +60,20 @@ public class ReminderConfig {
         this.recurring = recurring;
     }
 
-    public ReminderUser getUser() {
-        return user;
+    public ReminderUser getReminderUser() {
+        return reminderUser;
     }
 
-    public void setUser(ReminderUser user) {
-        this.user = user;
+    public void setReminderUser(ReminderUser reminderUser) {
+        this.reminderUser = reminderUser;
+    }
+
+    public Set<Reminder> getReminders() {
+        return reminders;
+    }
+
+    public void setReminders(Set<Reminder> reminders) {
+        this.reminders = reminders;
     }
 
     @Override
@@ -74,7 +83,7 @@ public class ReminderConfig {
                 ", subject='" + subject + '\'' +
                 ", body='" + body + '\'' +
                 ", recurring=" + recurring +
-                ", user=" + user +
+                ", user=" + reminderUser +
                 ", reminders=" + reminders +
                 '}';
     }

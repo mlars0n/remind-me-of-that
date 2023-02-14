@@ -1,22 +1,30 @@
 package com.remindmeofthat.service;
 
+import com.helger.commons.datetime.OffsetDate;
 import com.remindmeofthat.data.model.Reminder;
 import com.remindmeofthat.data.model.ReminderConfig;
-import com.remindmeofthat.data.model.ReminderUser;
 import com.remindmeofthat.data.repository.ReminderConfigRepository;
 import com.remindmeofthat.data.repository.ReminderRepository;
 import com.remindmeofthat.data.repository.ReminderUserRepository;
+import com.remindmeofthat.web.EditReminderView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
+import javax.transaction.Transactional;
+import java.time.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Service to handle reminder creation and other reminder services
  */
 @Service
 public class ReminderManagementService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReminderManagementService.class);
 
     private ReminderUserRepository reminderUserRepository;
     private ReminderConfigRepository reminderConfigRepository;
@@ -34,7 +42,8 @@ public class ReminderManagementService {
      * Method to encompass the logic that creates reservations
      * @param reminderConfig
      */
-    public void createReminders(ReminderConfig reminderConfig, OffsetDateTime offsetDateTime) {
+    @Transactional
+    public void createRemindersWithRandomTime(ReminderConfig reminderConfig, LocalDate localDate, int timeZoneOffset) {
 
         //Create a recurring reminder if one is called for
         if (reminderConfig.getRecurring()) {
@@ -44,8 +53,27 @@ public class ReminderManagementService {
             Reminder reminder = new Reminder();
             reminder.setSent(false);
             reminder.setReminderConfig(reminderConfig);
+
+            //Create a localDateTime object with a time of 2:00am
+            //TODO randomize the time as a time before 00:00 and 04:00
+            LocalTime localTime = LocalTime.of(2, 0, 0);
+            LocalDateTime localDateTime = LocalDateTime.of(localDate, localTime);
+
+            // Convert the local date and time to an OffsetDateTime object with the correct time zone offset
+            ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
+            OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, zoneOffset);
+
+            //Set the time
             reminder.setReminderTime(offsetDateTime);
-            reminderRepository.save(reminder);
+
+            logger.debug("Saving reminder config [{}] with reminder date/time of [{}]", reminderConfig, offsetDateTime);
+
+            //Set the new reminder into the set
+            Set<Reminder> reminderSet = new HashSet<>(Arrays.asList(reminder));
+            reminderConfig.setReminders(reminderSet);
+
+            //Save it all into the DB
+            reminderConfigRepository.save(reminderConfig);
         }
     }
 

@@ -27,7 +27,7 @@ public class ReminderUser {
     @Column(name ="link_created_date", nullable = true)
     private OffsetDateTime linkCreatedDate;
 
-    @OneToMany(mappedBy="user")
+    @OneToMany(mappedBy= "reminderUser")
     private Set<ReminderConfig> reminderConfigs;
 
     public Long getId() {
