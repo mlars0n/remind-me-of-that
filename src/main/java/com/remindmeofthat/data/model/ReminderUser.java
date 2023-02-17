@@ -1,10 +1,17 @@
 package com.remindmeofthat.data.model;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
 @Table(name = "reminder_user")
+@EntityListeners(AuditingEntityListener.class)
 public class ReminderUser {
 
     @Id
@@ -26,6 +33,14 @@ public class ReminderUser {
 
     @Column(name ="link_created_date", nullable = true)
     private OffsetDateTime linkCreatedDate;
+
+    @Column(name ="created_date", nullable = false, updatable = false)
+    @CreatedDate
+    private LocalDateTime createdDate;
+
+    @Column(name ="last_modified_date", nullable = true)
+    @LastModifiedDate
+    private LocalDateTime lastModifiedDate;
 
     @OneToMany(mappedBy= "reminderUser")
     private Set<ReminderConfig> reminderConfigs;
@@ -83,6 +98,22 @@ public class ReminderUser {
 
     public void setLinkCreatedDate(OffsetDateTime linkCreatedDate) {
         this.linkCreatedDate = linkCreatedDate;
+    }
+
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public LocalDateTime getLastModifiedDate() {
+        return lastModifiedDate;
+    }
+
+    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
+        this.lastModifiedDate = lastModifiedDate;
     }
 }
 

@@ -13,17 +13,24 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.*;
+import org.apache.commons.io.input.TeeInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,17 +157,49 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         this.setHorizontalComponentAlignment(Alignment.CENTER, addReminderButton);
         addReminderButton.addClickListener(event -> {
             //TODO check whether we are editing or adding but for now just add a new one
-            reminderConfig = new ReminderConfig();
+            this.reminderConfig = new ReminderConfig();
+            binder.setBean(new ReminderConfig());
             editReminderConfigDialog.open();
         });
 
         setWidthFull();
-        add(addReminderButton, remindersGrid, editReminderConfigDialog);
+        add(addReminderButton, new H4("Your Reminders"), remindersGrid, editReminderConfigDialog);
     }
     private void createGrid() {
-        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Subject").setKey("subject");
+        //remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
+        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder").setKey("subject");
+        //remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder Date").setKey("subject");
         remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUser(reminderUser));
-        remindersGrid.setWidthFull();
+
+        remindersGrid.addSelectionListener(item -> {
+            //logger.debug("Using ReminderConfig item [{}]", item);
+
+            if (item.getFirstSelectedItem().isPresent()) {
+                binder.setBean(item.getFirstSelectedItem().get());
+            }
+            editReminderConfigDialog.open();
+        });
+
+        //remindersGrid.setWidthFull();
+
+        //Set up the details renderer
+        /*remindersGrid.setItemDetailsRenderer(
+                new ComponentRenderer<>(reminderConfig -> {
+                    //VerticalLayout reminderDetailsLayout = new VerticalLayout();
+                    Paragraph paragraph = new Paragraph();
+                    paragraph.add(reminderConfig.getBody());
+
+                    return paragraph;
+                }));*/
+
+
+
+    }
+
+    private TemplateRenderer<ReminderConfig> createToggleDetailsRenderer() {
+        return TemplateRenderer.<ReminderConfig>of("<vaadin-button theme=\"secondary\" on-click=\"handleClick\">+</vaadin-button>")
+                .withEventHandler("handleClick",
+                        reminderConfig -> remindersGrid.setDetailsVisible(reminderConfig, !remindersGrid.isDetailsVisible(reminderConfig)));
     }
 
     private void createDialog() {
@@ -179,8 +218,31 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         body.getStyle().set("resize", "both");
         body.getStyle().set("overflow", "auto");
 
-        //Set the recurring labels
-        recurring.setLabel("Repeats");
+        //Make a horizontal layout for the recurring part
+        HorizontalLayout recurringLayout = new HorizontalLayout();
+
+        //Set the recurring label
+        recurring.setLabel("Repeat reminder");
+
+        //Recurring period values
+        Select<String> recurringPeriod = new Select<>();
+        recurringPeriod.setPlaceholder("Repeat");
+        recurringPeriod.setItems("Daily", "Weekly", "Monthly", "Yearly");
+        recurringPeriod.setVisible(false);
+
+        //If we change this, change up the other values on this page
+        recurring.addValueChangeListener(event -> {
+            if (event.getValue()) {
+                reminderDate.setLabel("Reminder Start Date");
+                recurringPeriod.setVisible(true);
+            } else {
+                reminderDate.setLabel("Reminder Date");
+                recurringPeriod.setVisible(false);
+            }
+        });
+
+        recurringLayout.add(recurring, recurringPeriod);
+        recurringLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 
         //Set tooltip text on the Date picker
         Tooltip.forComponent(dialogueTimeZoneNotification)
@@ -188,8 +250,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
                 .withPosition(Tooltip.TooltipPosition.TOP_START);
         //reminderDate.setTooltipText("Reminders will be sent out between 00:00 and 04:00 hours in your local timezone");
 
-
-        dialogLayout.add(subject, body, reminderDate, createDialogButtons());
+        dialogLayout.add(subject, body, recurringLayout, reminderDate, createDialogButtons());
         editReminderConfigDialog.add(dialogLayout);
     }
 
@@ -202,7 +263,6 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Cancel action
         cancel.addClickListener(event -> {
-            binder.readBean(null);
             editReminderConfigDialog.close();
         });
 

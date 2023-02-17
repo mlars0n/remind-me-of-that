@@ -43,7 +43,7 @@ public class ReminderManagementService {
      * @param reminderConfig
      */
     @Transactional
-    public void createRemindersWithRandomTime(ReminderConfig reminderConfig, LocalDate localDate, int timeZoneOffset) {
+    public void createRemindersWithRandomTime(ReminderConfig reminderConfig, LocalDate reminderStartDate, int timeZoneOffset) {
 
         //Create a recurring reminder if one is called for
         if (reminderConfig.getRecurring()) {
@@ -57,7 +57,7 @@ public class ReminderManagementService {
             //Create a localDateTime object with a time of 2:00am
             //TODO randomize the time as a time before 00:00 and 04:00
             LocalTime localTime = LocalTime.of(2, 0, 0);
-            LocalDateTime localDateTime = LocalDateTime.of(localDate, localTime);
+            LocalDateTime localDateTime = LocalDateTime.of(reminderStartDate, localTime);
 
             // Convert the local date and time to an OffsetDateTime object with the correct time zone offset
             ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
@@ -65,6 +65,9 @@ public class ReminderManagementService {
 
             //Set the time
             reminder.setReminderTime(offsetDateTime);
+
+            //Set the reminder date (if there's only one reminder this is the same as the one reminder we are creating)f
+            reminderConfig.setStartDate(offsetDateTime);
 
             logger.debug("Saving reminder config [{}] with reminder date/time of [{}]", reminderConfig, offsetDateTime);
 
