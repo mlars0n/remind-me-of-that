@@ -52,6 +52,78 @@
 
         </createTable>
 
+        <!-- Table to store reminder repeat types -->
+        <createTable tableName="reminder_repeat_type">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <!--The human readable name of the reminder repeat type-->
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <!-- Human readable but stable key -->
+            <column name="key" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="description" type="varchar(1000)">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- The last modified date -->
+            <column name="last_modified_date" type="timestamp(3) with time zone">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- The start date -->
+            <column name="created_date" type="timestamp(3) with time zone">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Insert the default reminder repeat types -->
+        <insert tableName="reminder_repeat_type">
+            <column  name="name"  value="Never"/>
+            <column  name="key"  value="NEVER"/>
+            <column  name="description"  value="Never repeat (send reminder(s) only once)"/>
+            <column name="created_date" valueDate="NOW()"/>
+            <column name="last_modified_date" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="reminder_repeat_type">
+            <column  name="name"  value="Daily"/>
+            <column  name="key"  value="DAILY"/>
+            <column  name="description"  value="Repeat reminder daily"/>
+            <column name="created_date" valueDate="NOW()"/>
+            <column name="last_modified_date" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="reminder_repeat_type">
+            <column  name="name"  value="Weekly"/>
+            <column  name="key"  value="WEEKLY"/>
+            <column  name="description"  value="Repeat reminder weekly"/>
+            <column name="created_date" valueDate="NOW()"/>
+            <column name="last_modified_date" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="reminder_repeat_type">
+            <column  name="name"  value="Monthly"/>
+            <column  name="key"  value="MONTHLY"/>
+            <column  name="description"  value="Repeat reminder monthly"/>
+            <column name="created_date" valueDate="NOW()"/>
+            <column name="last_modified_date" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="reminder_repeat_type">
+            <column  name="name"  value="Yearly"/>
+            <column  name="key"  value="YEARLY"/>
+            <column  name="description"  value="Repeat reminder yearly"/>
+            <column name="created_date" valueDate="NOW()"/>
+            <column name="last_modified_date" valueDate="NOW()"/>
+        </insert>
+
         <!-- A reminder configuration -->
         <createTable tableName="reminder_config">
             <!--Primary key-->
@@ -69,10 +141,6 @@
                 <constraints nullable="true"/>
             </column>
 
-            <column name="recurring"  type="boolean">
-                <constraints nullable="true"/>
-            </column>
-
             <!-- The start date of the reminder (can be only one, so the start date is the only reminder,
             or it can be the start date of a recurring setup -->
             <column name="start_date" type="timestamp(3) with time zone">
@@ -84,6 +152,10 @@
             <!--FK pointer back to user-->
             <column name="user_id" type="bigint">
                 <constraints nullable="false" foreignKeyName="fk_user_user_id" references="reminder_user(id)"/>
+            </column>
+
+            <column name="reminder_repeat_type_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_reminder_repeat_type_id" references="reminder_repeat_type(id)"/>
             </column>
 
             <!-- When the reminder config was created -->
@@ -104,7 +176,7 @@
                 <constraints primaryKey="true" nullable="false"/>
             </column>
 
-            <column name="reminder_time" type="timestamp(3)"/>
+            <column name="reminder_time" type="timestamp(3) with time zone"/>
 
             <column name="sent" type="boolean">
                 <constraints nullable="false"/>
@@ -125,7 +197,7 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        
+
     </changeSet>
 
 </databaseChangeLog>

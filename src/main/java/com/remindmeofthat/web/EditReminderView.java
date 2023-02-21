@@ -22,23 +22,20 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
-import com.vaadin.flow.router.*;
-import org.apache.commons.io.input.TeeInputStream;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalQueries;
 import java.util.Locale;
@@ -76,7 +73,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     Checkbox recurring = new Checkbox();
 
-    DatePicker reminderDate = new DatePicker("Reminder Date");
+    DatePicker startDate = new DatePicker("Reminder Date");
 
     Button save = new Button("Save");
     Button cancel = new Button("Cancel");
@@ -141,10 +138,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     private void completeSetup() {
 
-        //Complete the bean validation binder setup
-        binder.bindInstanceFields(this);
-
-        //Create the popup dialog
+        //Create the popup dialog (and set up the binder for it)
         createDialog();
 
         //Create the reminders grid
@@ -162,25 +156,40 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             editReminderConfigDialog.open();
         });
 
-        setWidthFull();
+        setSizeFull();
         add(addReminderButton, new H4("Your Reminders"), remindersGrid, editReminderConfigDialog);
     }
     private void createGrid() {
         //remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
         remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder").setKey("subject");
-        //remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder Date").setKey("subject");
         remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUser(reminderUser));
 
-        remindersGrid.addSelectionListener(item -> {
+        /*remindersGrid.addSelectionListener(item -> {
             //logger.debug("Using ReminderConfig item [{}]", item);
 
             if (item.getFirstSelectedItem().isPresent()) {
                 binder.setBean(item.getFirstSelectedItem().get());
             }
             editReminderConfigDialog.open();
-        });
+        });*/
+
+        remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate()).setHeader("Start Date").setKey("startDate");
+        remindersGrid.addColumn(reminderConfig -> reminderConfig.getCreatedDate()).setHeader("Created Date").setKey("createdDate");
+
+        //Add the edit button
+        remindersGrid.addComponentColumn(reminderConfig -> {
+            Button editRowButton = VaadinConstants.editButton();
+
+            editRowButton.addClickListener(event -> {
+                binder.setBean(reminderConfig);
+                editReminderConfigDialog.open();
+            });
+
+            return editRowButton;
+        }).setHeader("Edit");
 
         //remindersGrid.setWidthFull();
+        remindersGrid.setSizeFull();
 
         //Set up the details renderer
         /*remindersGrid.setItemDetailsRenderer(
@@ -192,8 +201,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
                     return paragraph;
                 }));*/
 
-
-
+        //Turn off the selection mode
+        remindersGrid.setSelectionMode(Grid.SelectionMode.NONE);
     }
 
     private TemplateRenderer<ReminderConfig> createToggleDetailsRenderer() {
@@ -210,8 +219,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         editReminderConfigDialog.setResizable(true);
 
         //Create the component sizes
-        subject.setWidth("30em");
-        body.setWidth("30em");
+        subject.setWidthFull();
+        body.setWidthFull();
         body.setHeight("250px");
 
         //Make this field resizable
@@ -222,26 +231,34 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         HorizontalLayout recurringLayout = new HorizontalLayout();
 
         //Set the recurring label
-        recurring.setLabel("Repeat reminder");
+        recurring.setLabel("Repeat Reminder");
 
         //Recurring period values
         Select<String> recurringPeriod = new Select<>();
-        recurringPeriod.setPlaceholder("Repeat");
-        recurringPeriod.setItems("Daily", "Weekly", "Monthly", "Yearly");
-        recurringPeriod.setVisible(false);
+        recurringPeriod.setLabel("Repeat Reminder");
+        //recurringPeriod.setPlaceholder("Repeat");
+        recurringPeriod.setItems("Never", "Daily", "Weekly", "Monthly", "Yearly");
+        recurringPeriod.setValue("Never");
+        recurringPeriod.setEnabled(true);
+
+        //Date picker to stop sending the reminder
+        DatePicker endDatePicker = new DatePicker("Reminder End Date");
+        endDatePicker.setEnabled(false);
 
         //If we change this, change up the other values on this page
         recurring.addValueChangeListener(event -> {
             if (event.getValue()) {
-                reminderDate.setLabel("Reminder Start Date");
-                recurringPeriod.setVisible(true);
+                startDate.setLabel("Reminder Start Date");
+                recurringPeriod.setEnabled(true);
+                endDatePicker.setEnabled(true);
             } else {
-                reminderDate.setLabel("Reminder Date");
-                recurringPeriod.setVisible(false);
+                startDate.setLabel("Reminder Date");
+                recurringPeriod.setEnabled(false);
+                endDatePicker.setEnabled(false);
             }
         });
 
-        recurringLayout.add(recurring, recurringPeriod);
+        recurringLayout.add(startDate, recurringPeriod, endDatePicker);
         recurringLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 
         //Set tooltip text on the Date picker
@@ -250,7 +267,39 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
                 .withPosition(Tooltip.TooltipPosition.TOP_START);
         //reminderDate.setTooltipText("Reminders will be sent out between 00:00 and 04:00 hours in your local timezone");
 
-        dialogLayout.add(subject, body, recurringLayout, reminderDate, createDialogButtons());
+        //Create the binder for the start date field, which requires a converter. The first lambda converts the UI value
+        //to the model value. The second lambda converts the model value to the UI value. Note that this has to be done in a way
+        //that takes into account the time zone offset and allows that to be passed in as a parameter. In this case that is
+        //done using a lambda
+        //TODO add validations and clearer error messages
+        binder.forField(startDate)
+                .withConverter(localDateFromUi -> {
+                    logger.debug("Creating OffsetDateTime from local date [{}] with offset [{}]", localDateFromUi, timeZoneOffset);
+
+                    LocalTime localTime = LocalTime.of(0, 0, 0);
+                    LocalDateTime localDateTime = LocalDateTime.of(localDateFromUi, localTime);
+
+                    // Convert the local date and time to an OffsetDateTime object with the correct time zone offset
+                    ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
+                    OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, zoneOffset);
+                    return offsetDateTime;
+                }, modelOffsetDateToUi -> {
+                    //Convert the OffsetDateTime object to a local date and time if it is not null
+                    //If it is null, it's because it's a new reminder and we don't have a date yet
+                    if (modelOffsetDateToUi == null) {
+                        return null;
+                    }
+
+                    LocalDateTime localDateTime = modelOffsetDateToUi.toLocalDateTime();
+                    LocalDate localDate = localDateTime.toLocalDate();
+                    return localDate;
+                }, "Invalid date")
+                .bind(ReminderConfig::getStartDate, ReminderConfig::setStartDate);
+
+        //Complete the bean validation binder setup
+        binder.bindInstanceFields(this);
+
+        dialogLayout.add(subject, body, recurringLayout, createDialogButtons());
         editReminderConfigDialog.add(dialogLayout);
     }
 
@@ -277,13 +326,16 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
                 reminderConfig.setReminderUser(reminderUser);
 
                 // Get the local date and time from the DateTimePicker
-                LocalDate localDate = reminderDate.getValue();
+                LocalDate localDate = startDate.getValue();
 
                 //Save this all to the database with the correct logic
-                reminderManagementService.createRemindersWithRandomTime(reminderConfig, localDate, timeZoneOffset);
+                reminderManagementService.createRemindersWithRandomTime(reminderConfig, timeZoneOffset);
 
                 //Clear out the ReminderConfig object for clarity
                 reminderConfig = new ReminderConfig();
+
+                //Update the grid showing the list of reminders
+                remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUser(reminderUser));
 
                 //Close the dialog and update the items in the list
                 editReminderConfigDialog.close();

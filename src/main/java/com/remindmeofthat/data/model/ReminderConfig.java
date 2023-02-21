@@ -2,17 +2,14 @@ package com.remindmeofthat.data.model;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
 @Table(name = "reminder_config")
-@EntityListeners(AuditingEntityListener.class)
-public class ReminderConfig {
+public class ReminderConfig extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,12 +20,16 @@ public class ReminderConfig {
     @Column(name = "body")
     private String body;
 
-    @Column(name = "recurring")
-    private boolean recurring;
+    @Column(name ="start_date", nullable = false)
+    private OffsetDateTime startDate;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private ReminderUser reminderUser;
+
+    @ManyToOne
+    @JoinColumn(name = "reminder_repeat_type_id", nullable = false)
+    private ReminderRepeatType reminderRepeatType;
 
     @OneToMany(mappedBy="reminderConfig", cascade = {CascadeType.ALL, CascadeType.MERGE})
     private Set<Reminder> reminders;
@@ -58,15 +59,6 @@ public class ReminderConfig {
         this.body = body;
     }
 
-
-    public boolean getRecurring() {
-        return recurring;
-    }
-
-    public void setRecurring(boolean recurring) {
-        this.recurring = recurring;
-    }
-
     public ReminderUser getReminderUser() {
         return reminderUser;
     }
@@ -75,39 +67,12 @@ public class ReminderConfig {
         this.reminderUser = reminderUser;
     }
 
-    @Column(name ="start_date", nullable = false)
-    private OffsetDateTime startDate;
-
-    @Column(name ="created_date", nullable = false, updatable = false)
-    @CreatedDate
-    private LocalDateTime createdDate;
-
-    @Column(name ="last_modified_date", nullable = true)
-    @LastModifiedDate
-    private LocalDateTime lastModifiedDate;
-
     public Set<Reminder> getReminders() {
         return reminders;
     }
 
     public void setReminders(Set<Reminder> reminders) {
         this.reminders = reminders;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public LocalDateTime getLastModifiedDate() {
-        return lastModifiedDate;
-    }
-
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
     }
 
     public OffsetDateTime getStartDate() {
@@ -118,16 +83,24 @@ public class ReminderConfig {
         this.startDate = startDate;
     }
 
+    public ReminderRepeatType getReminderRepeatType() {
+        return reminderRepeatType;
+    }
+
+    public void setReminderRepeatType(ReminderRepeatType reminderRepeatType) {
+        this.reminderRepeatType = reminderRepeatType;
+    }
+
     @Override
     public String toString() {
         return "ReminderConfig{" +
                 "id=" + id +
                 ", subject='" + subject + '\'' +
                 ", body='" + body + '\'' +
-                ", recurring=" + recurring +
-                ", reminderUser=" + reminderUser +
-                ", reminders=" + reminders +
                 ", startDate=" + startDate +
+                ", reminderUser=" + reminderUser +
+                ", reminderRepeatType=" + reminderRepeatType +
+                ", reminders=" + reminders +
                 ", createdDate=" + createdDate +
                 ", lastModifiedDate=" + lastModifiedDate +
                 '}';

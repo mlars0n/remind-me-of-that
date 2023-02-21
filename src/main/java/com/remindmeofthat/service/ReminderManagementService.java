@@ -43,10 +43,12 @@ public class ReminderManagementService {
      * @param reminderConfig
      */
     @Transactional
-    public void createRemindersWithRandomTime(ReminderConfig reminderConfig, LocalDate reminderStartDate, int timeZoneOffset) {
+    public void createRemindersWithRandomTime(ReminderConfig reminderConfig, int timeZoneOffset) {
+
+        ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
 
         //Create a recurring reminder if one is called for
-        if (reminderConfig.getRecurring()) {
+        if (!reminderConfig.getReminderRepeatType().getKey().equalsIgnoreCase("NEVER")) {
             //TODO this might need to be
             createRepeatingReminder(reminderConfig);
         } else { //Else just create a single reminder
@@ -54,22 +56,20 @@ public class ReminderManagementService {
             reminder.setSent(false);
             reminder.setReminderConfig(reminderConfig);
 
-            //Create a localDateTime object with a time of 2:00am
+            //Add two hours to OffsetDateTime to get to 2:00am
             //TODO randomize the time as a time before 00:00 and 04:00
-            LocalTime localTime = LocalTime.of(2, 0, 0);
-            LocalDateTime localDateTime = LocalDateTime.of(reminderStartDate, localTime);
+            OffsetDateTime offsetDateTimeForReminder = reminderConfig.getStartDate().plusHours(2);
 
-            // Convert the local date and time to an OffsetDateTime object with the correct time zone offset
-            ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
-            OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, zoneOffset);
+            //Set the reminder date/time and created/modified times
+            reminder.setReminderTime(offsetDateTimeForReminder);
+            reminder.setCreatedDate(OffsetDateTime.now(zoneOffset));
+            reminder.setLastModifiedDate(OffsetDateTime.now(zoneOffset));
 
-            //Set the time
-            reminder.setReminderTime(offsetDateTime);
+            logger.debug("Saving reminder config [{}] with reminder date/time of [{}]", reminderConfig, offsetDateTimeForReminder);
 
-            //Set the reminder date (if there's only one reminder this is the same as the one reminder we are creating)f
-            reminderConfig.setStartDate(offsetDateTime);
-
-            logger.debug("Saving reminder config [{}] with reminder date/time of [{}]", reminderConfig, offsetDateTime);
+            //Set the right audit dates into the reminder config
+            reminderConfig.setCreatedDate(OffsetDateTime.now(zoneOffset));
+            reminderConfig.setLastModifiedDate(OffsetDateTime.now(zoneOffset));
 
             //Set the new reminder into the set
             Set<Reminder> reminderSet = new HashSet<>(Arrays.asList(reminder));
