@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
  * Class to hold common fields for all entities
  */
 @MappedSuperclass
-public class BaseEntity {
+public class BaseEntityZonedDates {
     @Column(name ="created_date", nullable = false, updatable = false)
     protected OffsetDateTime createdDate;
 

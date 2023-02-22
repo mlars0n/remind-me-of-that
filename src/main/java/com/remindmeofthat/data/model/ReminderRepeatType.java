@@ -1,11 +1,11 @@
 package com.remindmeofthat.data.model;
 
 import javax.persistence.*;
-import java.time.OffsetDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "reminder_repeat_type")
-public class ReminderRepeatType extends BaseEntity {
+public class ReminderRepeatType extends BaseEntityZonedDates {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,5 +49,18 @@ public class ReminderRepeatType extends BaseEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReminderRepeatType that = (ReminderRepeatType) o;
+        return key.equals(that.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key);
     }
 }

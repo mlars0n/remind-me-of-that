@@ -1,15 +1,16 @@
 package com.remindmeofthat.web;
 
 import com.remindmeofthat.data.model.ReminderConfig;
+import com.remindmeofthat.data.model.ReminderRepeatType;
 import com.remindmeofthat.data.model.ReminderUser;
 import com.remindmeofthat.data.repository.ReminderConfigRepository;
+import com.remindmeofthat.data.repository.ReminderRepeatTypeRepository;
 import com.remindmeofthat.data.repository.ReminderUserRepository;
 import com.remindmeofthat.service.ReminderManagementService;
 import com.remindmeofthat.service.ReminderUserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -38,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.*;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalQueries;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -53,6 +55,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
     private final ReminderConfigRepository reminderConfigRepository;
 
     private final ReminderManagementService reminderManagementService;
+
+    private final ReminderRepeatTypeRepository reminderRepeatTypeRepository;
 
     private String linkId;
     private ReminderUser reminderUser;
@@ -71,7 +75,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
     TextField subject = new TextField("Subject");
     TextArea body = new TextArea("Body");
 
-    Checkbox recurring = new Checkbox();
+    Select<ReminderRepeatType> reminderRepeatType = new Select<>();
 
     DatePicker startDate = new DatePicker("Reminder Date");
 
@@ -83,11 +87,13 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
     Grid<ReminderConfig> remindersGrid = new Grid<>();
 
     public EditReminderView(@Autowired ReminderUserService reminderService, @Autowired ReminderUserRepository reminderUserRepository,
-                            @Autowired ReminderConfigRepository reminderConfigRepository, @Autowired ReminderManagementService reminderManagementService) {
+                            @Autowired ReminderConfigRepository reminderConfigRepository, @Autowired ReminderManagementService reminderManagementService,
+                            @Autowired ReminderRepeatTypeRepository reminderRepeatTypeRepository) {
         this.reminderService = reminderService;
         this.reminderUserRepository = reminderUserRepository;
         this.reminderConfigRepository = reminderConfigRepository;
         this.reminderManagementService = reminderManagementService;
+        this.reminderRepeatTypeRepository = reminderRepeatTypeRepository;
 
         //Get the extended client side details
         UI.getCurrent().getPage().retrieveExtendedClientDetails(details -> {
@@ -151,7 +157,9 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         this.setHorizontalComponentAlignment(Alignment.CENTER, addReminderButton);
         addReminderButton.addClickListener(event -> {
             //TODO check whether we are editing or adding but for now just add a new one
+            ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey("NEVER");
             this.reminderConfig = new ReminderConfig();
+            reminderConfig.setReminderRepeatType(neverRepeat);
             binder.setBean(new ReminderConfig());
             editReminderConfigDialog.open();
         });
@@ -227,38 +235,33 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         body.getStyle().set("resize", "both");
         body.getStyle().set("overflow", "auto");
 
-        //Make a horizontal layout for the recurring part
-        HorizontalLayout recurringLayout = new HorizontalLayout();
-
-        //Set the recurring label
-        recurring.setLabel("Repeat Reminder");
-
-        //Recurring period values
-        Select<String> recurringPeriod = new Select<>();
-        recurringPeriod.setLabel("Repeat Reminder");
-        //recurringPeriod.setPlaceholder("Repeat");
-        recurringPeriod.setItems("Never", "Daily", "Weekly", "Monthly", "Yearly");
-        recurringPeriod.setValue("Never");
-        recurringPeriod.setEnabled(true);
-
         //Date picker to stop sending the reminder
         DatePicker endDatePicker = new DatePicker("Reminder End Date");
         endDatePicker.setEnabled(false);
 
-        //If we change this, change up the other values on this page
-        recurring.addValueChangeListener(event -> {
-            if (event.getValue()) {
-                startDate.setLabel("Reminder Start Date");
-                recurringPeriod.setEnabled(true);
-                endDatePicker.setEnabled(true);
-            } else {
-                startDate.setLabel("Reminder Date");
-                recurringPeriod.setEnabled(false);
-                endDatePicker.setEnabled(false);
-            }
-        });
+        //Make a horizontal layout for the recurring part
+        HorizontalLayout recurringLayout = new HorizontalLayout();
 
-        recurringLayout.add(startDate, recurringPeriod, endDatePicker);
+        //Set up the recurring dropdown list
+        reminderRepeatType.setLabel("Repeat Reminder");
+        List<ReminderRepeatType> reminderRepeatTypes = reminderRepeatTypeRepository.findAll();
+        ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey("NEVER");
+        reminderRepeatType.setValue(reminderRepeatTypes.get(0));
+        reminderRepeatType.setItemLabelGenerator(ReminderRepeatType::getName);
+        reminderRepeatType.setItems(reminderRepeatTypes);
+
+        //If we change this, change up the other values on this page
+        /*reminderRepeatType.addValueChangeListener(event -> {
+            if (event.getValue() != null && event.getValue().equals(neverRepeat)) {
+                startDate.setLabel("Reminder Date");
+                endDatePicker.setEnabled(false);
+            } else {
+                startDate.setLabel("Reminder Start Date");
+                endDatePicker.setEnabled(true);
+            }
+        });*/
+
+        recurringLayout.add(startDate, reminderRepeatType, endDatePicker);
         recurringLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 
         //Set tooltip text on the Date picker

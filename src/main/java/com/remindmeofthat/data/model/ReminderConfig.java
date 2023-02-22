@@ -1,15 +1,12 @@
 package com.remindmeofthat.data.model;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
 @Table(name = "reminder_config")
-public class ReminderConfig extends BaseEntity {
+public class ReminderConfig extends BaseEntityZonedDates {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

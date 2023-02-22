@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "reminder")
-public class Reminder extends BaseEntity {
+public class Reminder extends BaseEntityZonedDates {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

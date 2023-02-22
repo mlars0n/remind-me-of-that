@@ -1,18 +1,15 @@
 package com.remindmeofthat.data.model;
 
-import com.fasterxml.jackson.databind.ser.Serializers;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
 @Table(name = "reminder_user")
-public class ReminderUser extends BaseEntity {
+@EntityListeners(AuditingEntityListener.class)
+public class ReminderUser extends BaseEntityLocalDates {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
