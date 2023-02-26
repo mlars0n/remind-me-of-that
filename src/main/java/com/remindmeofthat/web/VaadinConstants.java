@@ -10,7 +10,9 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 public class VaadinConstants {
 
     public static Button saveButton() {
-        return new Button("Save", new Icon(VaadinIcon.DISC));
+        //Button saveButton = new Button("Save", new Icon(VaadinIcon.DISC));
+        Button saveButton = new Button("Save", new Icon("lumo", "checkmark"));
+        return saveButton;
     }
 
     public static Button editButton() {
@@ -23,5 +25,13 @@ public class VaadinConstants {
 
     public static Button backButton() {
         return new Button("Back", new Icon(VaadinIcon.ENTER_ARROW));
+    }
+
+    public static Button cancelButton() {
+        //Button cancelButton = new Button("Cancel", new Icon(VaadinIcon.CLOSE));
+        Button cancelButton = new Button("Cancel", new Icon("lumo", "cross"));
+        return cancelButton;
+        //return new Button("Cancel", new Icon("lumo", "cross"));
+
     }
 }

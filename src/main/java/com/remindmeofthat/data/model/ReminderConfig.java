@@ -1,6 +1,7 @@
 package com.remindmeofthat.data.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
@@ -12,6 +13,7 @@ public class ReminderConfig extends BaseEntityZonedDates {
     private Long id;
 
     @Column(name = "subject", nullable = false)
+    @NotEmpty(message = "Please supply a headline for this reminder")
     private String subject;
 
     @Column(name = "body")
@@ -19,6 +21,9 @@ public class ReminderConfig extends BaseEntityZonedDates {
 
     @Column(name ="start_date", nullable = false)
     private OffsetDateTime startDate;
+
+    @Column(name ="end_date", nullable = true)
+    private OffsetDateTime endDate;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -80,6 +85,14 @@ public class ReminderConfig extends BaseEntityZonedDates {
         this.startDate = startDate;
     }
 
+    public OffsetDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(OffsetDateTime endDate) {
+        this.endDate = endDate;
+    }
+
     public ReminderRepeatType getReminderRepeatType() {
         return reminderRepeatType;
     }
@@ -95,6 +108,7 @@ public class ReminderConfig extends BaseEntityZonedDates {
                 ", subject='" + subject + '\'' +
                 ", body='" + body + '\'' +
                 ", startDate=" + startDate +
+                ", endDate=" + endDate +
                 ", reminderUser=" + reminderUser +
                 ", reminderRepeatType=" + reminderRepeatType +
                 ", reminders=" + reminders +

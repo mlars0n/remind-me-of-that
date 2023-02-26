@@ -85,7 +85,7 @@
 
         <!-- Insert the default reminder repeat types -->
         <insert tableName="reminder_repeat_type">
-            <column  name="name"  value="Never"/>
+            <column  name="name"  value="Never (one reminder)"/>
             <column  name="key"  value="NEVER"/>
             <column  name="description"  value="Never repeat (send reminder(s) only once)"/>
             <column name="created_date" valueDate="NOW()"/>
@@ -145,6 +145,11 @@
             or it can be the start date of a recurring setup -->
             <column name="start_date" type="timestamp(3) with time zone">
                 <constraints nullable="false"/>
+            </column>
+
+            <!-- The end date of the reminder, i.e. when to stop sending them -->
+            <column name="end_date" type="timestamp(3) with time zone">
+                <constraints nullable="true"/>
             </column>
 
             <!--Later on we will need a table to capture the recurring period-->

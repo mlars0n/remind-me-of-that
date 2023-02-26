@@ -26,7 +26,10 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vaadin.flow.data.binder.Result;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.ValueContext;
+import com.vaadin.flow.data.converter.Converter;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -72,16 +75,18 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     Paragraph dialogueTimeZoneNotification = new Paragraph();
     
-    TextField subject = new TextField("Subject");
+    TextField subject = new TextField("Headline");
     TextArea body = new TextArea("Body");
 
     Select<ReminderRepeatType> reminderRepeatType = new Select<>();
 
-    DatePicker startDate = new DatePicker("Reminder Date");
+    DatePicker startDate = new DatePicker();// Value of label is set below
 
-    Button save = new Button("Save");
-    Button cancel = new Button("Cancel");
-    Button delete = new Button(new Icon(VaadinIcon.TRASH));
+    DatePicker endDate = new DatePicker("Reminder End Date");
+
+    Button save = VaadinConstants.saveButton();
+    Button cancel = VaadinConstants.cancelButton();
+    Button delete = VaadinConstants.deleteButton();
 
     //Grid setup
     Grid<ReminderConfig> remindersGrid = new Grid<>();
@@ -99,14 +104,13 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         UI.getCurrent().getPage().retrieveExtendedClientDetails(details -> {
             timeZoneOffset = details.getTimezoneOffset() / 60 / 60 / 1000;
 
-
             ZoneOffset offset = ZoneOffset.ofHours(timeZoneOffset);
             ZoneId zoneId = offset.getRules().getOffset(Instant.now()).query(TemporalQueries.zone());
             String displayName = zoneId.getDisplayName(TextStyle.FULL, Locale.getDefault());
 
             logger.debug("Your time zone offset: " + offset.getId());
 
-            dialogueTimeZoneNotification.setText("Your time zone is [" + displayName + "]");
+            //dialogueTimeZoneNotification.setText("Your time zone is [" + displayName + "]");
 
         });
     }
@@ -160,7 +164,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey("NEVER");
             this.reminderConfig = new ReminderConfig();
             reminderConfig.setReminderRepeatType(neverRepeat);
-            binder.setBean(new ReminderConfig());
+            binder.setBean(reminderConfig);
+            delete.setVisible(false);
             editReminderConfigDialog.open();
         });
 
@@ -169,7 +174,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
     }
     private void createGrid() {
         //remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
-        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder").setKey("subject");
+        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Headline").setKey("headline");
         remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUser(reminderUser));
 
         /*remindersGrid.addSelectionListener(item -> {
@@ -226,6 +231,9 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         //Make sure you can resize the dialog
         editReminderConfigDialog.setResizable(true);
 
+        //Make it non modal
+        editReminderConfigDialog.setCloseOnOutsideClick(false);
+
         //Create the component sizes
         subject.setWidthFull();
         body.setWidthFull();
@@ -235,69 +243,105 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         body.getStyle().set("resize", "both");
         body.getStyle().set("overflow", "auto");
 
+        //Set the date formats allowed
+        DatePicker.DatePickerI18n multiFormatI18n = new DatePicker.DatePickerI18n();
+        multiFormatI18n.setDateFormats("yyyy-MM-dd", "MM/dd/yyyy","dd.MM.yyyy");
+        startDate.setI18n(multiFormatI18n);
+        endDate.setI18n(multiFormatI18n);
+
+        //Size the date fields
+        startDate.setWidth("13em");
+        endDate.setWidth("13em");
+
         //Date picker to stop sending the reminder
-        DatePicker endDatePicker = new DatePicker("Reminder End Date");
-        endDatePicker.setEnabled(false);
+        startDate.setRequired(true);
+        endDate.setEnabled(false);
 
         //Make a horizontal layout for the recurring part
         HorizontalLayout recurringLayout = new HorizontalLayout();
 
         //Set up the recurring dropdown list
         reminderRepeatType.setLabel("Repeat Reminder");
+        reminderRepeatType.setWidth("13em");
         List<ReminderRepeatType> reminderRepeatTypes = reminderRepeatTypeRepository.findAll();
         ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey("NEVER");
-        reminderRepeatType.setValue(reminderRepeatTypes.get(0));
         reminderRepeatType.setItemLabelGenerator(ReminderRepeatType::getName);
         reminderRepeatType.setItems(reminderRepeatTypes);
 
-        //If we change this, change up the other values on this page
-        /*reminderRepeatType.addValueChangeListener(event -> {
+        //If we change the reminder repeat type, change up the other values on this page
+        reminderRepeatType.addValueChangeListener(event -> {
             if (event.getValue() != null && event.getValue().equals(neverRepeat)) {
                 startDate.setLabel("Reminder Date");
-                endDatePicker.setEnabled(false);
+                endDate.setEnabled(false);
+                endDate.setRequired(false);
+                endDate.setValue(null);
             } else {
                 startDate.setLabel("Reminder Start Date");
-                endDatePicker.setEnabled(true);
+                endDate.setEnabled(true);
+                endDate.setRequired(true);
             }
-        });*/
+        });
 
-        recurringLayout.add(startDate, reminderRepeatType, endDatePicker);
+        recurringLayout.add(startDate, reminderRepeatType, endDate);
         recurringLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 
         //Set tooltip text on the Date picker
         Tooltip.forComponent(dialogueTimeZoneNotification)
                 .withText("Reminders will be sent out between 00:00 and 04:00 hours in your local timezone")
                 .withPosition(Tooltip.TooltipPosition.TOP_START);
-        //reminderDate.setTooltipText("Reminders will be sent out between 00:00 and 04:00 hours in your local timezone");
 
         //Create the binder for the start date field, which requires a converter. The first lambda converts the UI value
         //to the model value. The second lambda converts the model value to the UI value. Note that this has to be done in a way
-        //that takes into account the time zone offset and allows that to be passed in as a parameter. In this case that is
-        //done using a lambda
-        //TODO add validations and clearer error messages
+        //that takes into account the time zone offset and allows that to be passed in as a parameter, i.e. the converter needs
+        //access to that parameter
+
+        String dateFormatErrorMessage = "Invalid date. Formats allowed: yyyy-MM-dd, MM/dd/yyyy,dd.MM.yyyy";
         binder.forField(startDate)
-                .withConverter(localDateFromUi -> {
-                    logger.debug("Creating OffsetDateTime from local date [{}] with offset [{}]", localDateFromUi, timeZoneOffset);
-
-                    LocalTime localTime = LocalTime.of(0, 0, 0);
-                    LocalDateTime localDateTime = LocalDateTime.of(localDateFromUi, localTime);
-
-                    // Convert the local date and time to an OffsetDateTime object with the correct time zone offset
+                .withConverter(this::convertLocalDateToOffsetDateTime, this::convertOffsetDateTimeToLocalDate,
+                        dateFormatErrorMessage)
+                .withValidator(userOffsetDateTime -> {
+                    //Get today's time in the user's time zone at 00:00:00
                     ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
-                    OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, zoneOffset);
-                    return offsetDateTime;
-                }, modelOffsetDateToUi -> {
-                    //Convert the OffsetDateTime object to a local date and time if it is not null
-                    //If it is null, it's because it's a new reminder and we don't have a date yet
-                    if (modelOffsetDateToUi == null) {
-                        return null;
+                    OffsetDateTime offsetDateTimePlusOneDay = OffsetDateTime.of(LocalDateTime.now(), zoneOffset)
+                            .withHour(0).withMinute(0).withSecond(0).withNano(0).plusDays(1);
+
+                    //If the date isn't at least tomorrow's date, return false
+                    if (userOffsetDateTime == null || userOffsetDateTime.isBefore(offsetDateTimePlusOneDay)) {
+                        return false;
                     }
 
-                    LocalDateTime localDateTime = modelOffsetDateToUi.toLocalDateTime();
-                    LocalDate localDate = localDateTime.toLocalDate();
-                    return localDate;
-                }, "Invalid date")
+                    return true;
+                }, "Date needs to be tomorrow or later")
                 .bind(ReminderConfig::getStartDate, ReminderConfig::setStartDate);
+
+        binder.forField(endDate)
+                .withConverter(localDateFromUi -> {
+                            //If the end date is not enabled, return null
+                            if (!endDate.isEnabled()) {
+                                return null;
+                            } else {
+                                return convertLocalDateToOffsetDateTime(localDateFromUi);
+                            }
+                        },
+                        this::convertOffsetDateTimeToLocalDate,
+                        dateFormatErrorMessage)
+                .withValidator(userOffsetDateTime -> {
+
+                    //Always return true if the end date is not enabled
+                    if (!endDate.isEnabled() || startDate.getValue() == null) {
+                        return true;
+                    }
+
+                    OffsetDateTime convertedStartDate = convertLocalDateToOffsetDateTime(startDate.getValue());
+
+                    //If the date isn't at least tomorrow's date, return false
+                    if (userOffsetDateTime == null || userOffsetDateTime.isBefore(convertedStartDate)) {
+                        return false;
+                    }
+
+                    return true;
+                }, "End date must be later than start date")
+                .bind(ReminderConfig::getEndDate, ReminderConfig::setEndDate);;
 
         //Complete the bean validation binder setup
         binder.bindInstanceFields(this);
@@ -353,5 +397,36 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         buttonActions.add(save, cancel, delete);
 
         return buttonActions;
+    }
+
+    /**
+     * Convert the date from the UI to an OffsetDateTime object with the correct time zone offset and a time of 00:00:00
+     * @param localDateFromUi
+     * @return new offsetDateTime
+     */
+    private OffsetDateTime convertLocalDateToOffsetDateTime(LocalDate localDateFromUi) {
+        logger.debug("Creating OffsetDateTime from local date [{}] with offset [{}]", localDateFromUi, timeZoneOffset);
+
+        //Otherwise check for errors and return the value if there are no errors
+        LocalTime localTime = LocalTime.of(0, 0, 0);
+        LocalDateTime localDateTime = LocalDateTime.of(localDateFromUi, localTime);
+
+        // Convert the local date and time to an OffsetDateTime object with the correct time zone offset
+        ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
+        OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, zoneOffset);
+        return offsetDateTime;
+    }
+
+    private LocalDate convertOffsetDateTimeToLocalDate(OffsetDateTime modelOffsetDateToUi) {
+
+        //Convert the OffsetDateTime object to a local date and time if it is not null
+        //If it is null, it's because it's a new reminder and we don't have a date yet
+        if (modelOffsetDateToUi == null) {
+            return null;
+        }
+
+        LocalDateTime localDateTime = modelOffsetDateToUi.toLocalDateTime();
+        LocalDate localDate = localDateTime.toLocalDate();
+        return localDate;
     }
 }
