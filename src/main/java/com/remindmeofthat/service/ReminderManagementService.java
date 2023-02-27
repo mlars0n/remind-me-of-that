@@ -1,12 +1,10 @@
 package com.remindmeofthat.service;
 
-import com.helger.commons.datetime.OffsetDate;
 import com.remindmeofthat.data.model.Reminder;
 import com.remindmeofthat.data.model.ReminderConfig;
 import com.remindmeofthat.data.repository.ReminderConfigRepository;
 import com.remindmeofthat.data.repository.ReminderRepository;
 import com.remindmeofthat.data.repository.ReminderUserRepository;
-import com.remindmeofthat.web.EditReminderView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +41,7 @@ public class ReminderManagementService {
      * @param reminderConfig
      */
     @Transactional
-    public void createRemindersWithRandomTime(ReminderConfig reminderConfig, int timeZoneOffset) {
+    public void createNewRemindersWithRandomTime(ReminderConfig reminderConfig, int timeZoneOffset) {
 
         ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
 
@@ -78,6 +76,15 @@ public class ReminderManagementService {
             //Save it all into the DB
             reminderConfigRepository.save(reminderConfig);
         }
+    }
+
+    @Transactional
+    public void updateRemindersWithRandomTime(ReminderConfig reminderConfig, int timeZoneOffset) {
+        //Delete all unsent reminders for this reminder config, because we are going to recreate them
+        reminderRepository.deleteAllNotSentByReminderConfig(reminderConfig);
+
+        //Now recreate the reminders
+        createNewRemindersWithRandomTime(reminderConfig, timeZoneOffset);
     }
 
     public void createRepeatingReminder(ReminderConfig reminderConfig) {

@@ -15,12 +15,16 @@ public class VaadinConstants {
         return saveButton;
     }
 
-    public static Button editButton() {
+    /*public static Button editButton() {
         return new Button(new Icon(VaadinIcon.ELLIPSIS_DOTS_V));
+    }*/
+
+    public static Button editButton() {
+        return new Button(new Icon("lumo", "cog"));
     }
 
     public static Button deleteButton() {
-        return new Button(new Icon(VaadinIcon.TRASH));
+        return new Button("Delete", new Icon(VaadinIcon.TRASH));
     }
 
     public static Button backButton() {

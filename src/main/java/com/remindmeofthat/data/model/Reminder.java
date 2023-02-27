@@ -37,7 +37,7 @@ public class Reminder extends BaseEntityZonedDates {
         this.reminderTime = reminderTime;
     }
 
-    public boolean isSent() {
+    public boolean getSent() {
         return sent;
     }
 

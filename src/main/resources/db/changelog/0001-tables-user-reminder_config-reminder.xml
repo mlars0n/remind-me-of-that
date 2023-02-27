@@ -85,7 +85,7 @@
 
         <!-- Insert the default reminder repeat types -->
         <insert tableName="reminder_repeat_type">
-            <column  name="name"  value="Never (one reminder)"/>
+            <column  name="name"  value="Never (one reminder only)"/>
             <column  name="key"  value="NEVER"/>
             <column  name="description"  value="Never repeat (send reminder(s) only once)"/>
             <column name="created_date" valueDate="NOW()"/>
