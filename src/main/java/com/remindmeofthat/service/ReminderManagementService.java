@@ -5,6 +5,7 @@ import com.remindmeofthat.data.model.ReminderConfig;
 import com.remindmeofthat.data.repository.ReminderConfigRepository;
 import com.remindmeofthat.data.repository.ReminderRepository;
 import com.remindmeofthat.data.repository.ReminderUserRepository;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +48,7 @@ public class ReminderManagementService {
 
         //Create a recurring reminder if one is called for
         if (!reminderConfig.getReminderRepeatType().getKey().equalsIgnoreCase("NEVER")) {
-            //TODO this might need to be
-            createRepeatingReminder(reminderConfig);
+            createRepeatingReminder(reminderConfig, zoneOffset);
         } else { //Else just create a single reminder
             Reminder reminder = new Reminder();
             reminder.setSent(false);
@@ -63,21 +63,40 @@ public class ReminderManagementService {
             reminder.setCreatedDate(OffsetDateTime.now(zoneOffset));
             reminder.setLastModifiedDate(OffsetDateTime.now(zoneOffset));
 
+            Set<Reminder> reminderSet = new HashSet<>(Arrays.asList(reminder));
+
             logger.debug("Saving reminder config [{}] with reminder date/time of [{}]", reminderConfig, offsetDateTimeForReminder);
 
-            //Set the right audit dates into the reminder config
-            reminderConfig.setCreatedDate(OffsetDateTime.now(zoneOffset));
-            reminderConfig.setLastModifiedDate(OffsetDateTime.now(zoneOffset));
+            saveReminderConfig(reminderConfig, zoneOffset, reminderSet);
 
-            //Set the new reminder into the set
-            Set<Reminder> reminderSet = new HashSet<>(Arrays.asList(reminder));
-            reminderConfig.setReminders(reminderSet);
-
-            //Save it all into the DB
-            reminderConfigRepository.save(reminderConfig);
         }
     }
 
+    public void createRepeatingReminder(ReminderConfig reminderConfig, ZoneOffset zoneOffset) {
+        //TODO create repeating reminders according to the reminderRepeatType
+
+        //Save it all into the DB
+        saveReminderConfig(reminderConfig, zoneOffset, new HashSet<>());
+    }
+
+    private void saveReminderConfig(@NotNull ReminderConfig reminderConfig, ZoneOffset zoneOffset, Set<Reminder> reminderSet) {
+
+        //Set the right audit dates into the reminder config
+        reminderConfig.setCreatedDate(OffsetDateTime.now(zoneOffset));
+        reminderConfig.setLastModifiedDate(OffsetDateTime.now(zoneOffset));
+
+        //Set the new reminder(s) into the set
+        reminderConfig.setReminders(reminderSet);
+
+        //Save it all into the DB
+        reminderConfigRepository.save(reminderConfig);
+    }
+
+    /**
+     * Method to encompass the logic that updates reminders by deleting the unsent reminders and recreating them
+     * @param reminderConfig
+     * @param timeZoneOffset
+     */
     @Transactional
     public void updateRemindersWithRandomTime(ReminderConfig reminderConfig, int timeZoneOffset) {
         //Delete all unsent reminders for this reminder config, because we are going to recreate them
@@ -85,9 +104,5 @@ public class ReminderManagementService {
 
         //Now recreate the reminders
         createNewRemindersWithRandomTime(reminderConfig, timeZoneOffset);
-    }
-
-    public void createRepeatingReminder(ReminderConfig reminderConfig) {
-        //TODO create repeating reminders
     }
 }

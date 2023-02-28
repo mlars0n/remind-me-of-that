@@ -111,7 +111,6 @@ public class ReminderConfig extends BaseEntityZonedDates {
                 ", endDate=" + endDate +
                 ", reminderUser=" + reminderUser +
                 ", reminderRepeatType=" + reminderRepeatType +
-                ", reminders=" + reminders +
                 ", createdDate=" + createdDate +
                 ", lastModifiedDate=" + lastModifiedDate +
                 '}';

@@ -43,11 +43,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.liquibase:liquibase-core:4.17.2'
 	implementation 'org.postgresql:postgresql:42.5.1'
+	implementation 'org.jetbrains:annotations:23.0.0'
 
 	//Local jars
 	implementation fileTree(dir: 'ext-lib', include: '*.jar')
 
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}

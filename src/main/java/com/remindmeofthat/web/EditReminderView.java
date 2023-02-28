@@ -14,6 +14,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
@@ -27,6 +28,8 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -40,6 +43,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalQueries;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -185,21 +189,22 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         //The date format to use in the grid display
         DateTimeFormatter gridDisplayDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        //remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
-        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Headline").setKey("headline");
-        remindersGrid.addColumn(item -> item.getReminderRepeatType().getName()).setHeader("Repeat").setKey("repeat");
-
-        /*remindersGrid.addSelectionListener(item -> {
-            //logger.debug("Using ReminderConfig item [{}]", item);
-
-            if (item.getFirstSelectedItem().isPresent()) {
-                binder.setBean(item.getFirstSelectedItem().get());
+        //Set up the columns
+        remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
+        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Headline").setKey("headline").setSortable(true);
+        remindersGrid.addColumn(item -> item.getReminderRepeatType().getName()).setHeader("Repeat").setKey("repeat").setSortable(true);
+        remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate().format(gridDisplayDateFormatter))
+                .setHeader("Reminder Date/Start Date").setKey("startDate").setSortable(true);
+        remindersGrid.addColumn(reminderConfig -> {
+            if (reminderConfig.getEndDate() != null) {
+                return reminderConfig.getEndDate().format(gridDisplayDateFormatter);
+            } else {
+                return "n/a";
             }
-            editReminderConfigDialog.open();
-        });*/
+        }).setHeader("Reminder End Date").setKey("endDate").setSortable(true);
 
-        //remindersGrid.addColumn(reminderConfig -> reminderConfig.getCreatedDate().format(gridDisplayDateFormatter)).setHeader("Created Date").setKey("createdDate");
-        remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate().format(gridDisplayDateFormatter)).setHeader("Reminder Start Date").setKey("startDate");
+        Grid.Column<ReminderConfig> createdOnColumn = remindersGrid.addColumn(item -> item.getCreatedDate().format(gridDisplayDateFormatter)).setHeader("Created On").setKey("createdOn").setSortable(true);
+
 
         //Add the edit button
         remindersGrid.addComponentColumn(reminderConfig -> {
@@ -220,17 +225,24 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         remindersGrid.setSizeFull();
 
         //Set up the details renderer
-        /*remindersGrid.setItemDetailsRenderer(
+        remindersGrid.setItemDetailsRenderer(
                 new ComponentRenderer<>(reminderConfig -> {
                     //VerticalLayout reminderDetailsLayout = new VerticalLayout();
                     Paragraph paragraph = new Paragraph();
-                    paragraph.add(reminderConfig.getBody());
+                    //paragraph.add(reminderConfig.getBody());
+                    paragraph.add("This reminder was created on Jan 29, 2023. It is set to only be sent once. It's one reminder " +
+                            "was sent on Feb 26, 2023. No new reminders will be sent. ");
 
                     return paragraph;
-                }));*/
+                }));
 
         //Set the items
-        remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUser(reminderUser));
+        remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
+
+        //Set the default sort order
+        List<GridSortOrder<ReminderConfig>> sortOrderList = new ArrayList<>();
+        sortOrderList.add(new GridSortOrder<>(createdOnColumn, SortDirection.DESCENDING));
+        remindersGrid.sort(sortOrderList);
 
         //Turn off the selection mode
         remindersGrid.setSelectionMode(Grid.SelectionMode.NONE);
@@ -401,7 +413,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
                 reminderConfig = new ReminderConfig();
 
                 //Update the grid showing the list of reminders
-                remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUser(reminderUser));
+                remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
 
                 //Close the dialog and update the items in the list
                 editReminderConfigDialog.close();
@@ -424,7 +436,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
      * @return new offsetDateTime
      */
     private OffsetDateTime convertLocalDateToOffsetDateTime(LocalDate localDateFromUi) {
-        logger.debug("Creating OffsetDateTime from local date [{}] with offset [{}]", localDateFromUi, timeZoneOffset);
+        //logger.debug("Creating OffsetDateTime from local date [{}] with offset [{}]", localDateFromUi, timeZoneOffset);
 
         //Otherwise check for errors and return the value if there are no errors
         LocalTime localTime = LocalTime.of(0, 0, 0);

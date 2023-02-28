@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface ReminderConfigRepository extends JpaRepository<ReminderConfig, Long> {
-    public List<ReminderConfig> findReminderConfigByReminderUser(ReminderUser reminderUser);
+    public List<ReminderConfig> findReminderConfigByReminderUserOrderByCreatedDateDesc(ReminderUser reminderUser);
 }
