@@ -13,7 +13,7 @@ public class ReminderConfig extends BaseEntityZonedDates {
     private Long id;
 
     @Column(name = "subject", nullable = false)
-    @NotEmpty(message = "Please supply a headline for this reminder")
+    @NotEmpty(message = "This field is required.")
     private String subject;
 
     @Column(name = "body")

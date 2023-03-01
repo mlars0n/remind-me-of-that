@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface ReminderUserRepository extends JpaRepository<ReminderUser, Long> {
-    public Optional<ReminderUser> findReminderUserByLinkId(String linkId);
+    Optional<ReminderUser> findReminderUserByLinkId(String linkId);
 }

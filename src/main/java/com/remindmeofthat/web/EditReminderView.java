@@ -77,7 +77,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     Paragraph dialogueTimeZoneNotification = new Paragraph();
     
-    TextField subject = new TextField("Headline");
+    TextField subject = new TextField("Reminder Topic");
     TextArea body = new TextArea("Body");
 
     Select<ReminderRepeatType> reminderRepeatType = new Select<>();
@@ -96,6 +96,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
     //Whether we are editing within the dialog or not (if not, we are adding a reminder)
     boolean editing = false;
 
+    private String NEVER_REPEAT_KEY = "NEVER";
+
     public EditReminderView(@Autowired ReminderUserService reminderService, @Autowired ReminderUserRepository reminderUserRepository,
                             @Autowired ReminderConfigRepository reminderConfigRepository, @Autowired ReminderManagementService reminderManagementService,
                             @Autowired ReminderRepeatTypeRepository reminderRepeatTypeRepository) {
@@ -113,7 +115,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             ZoneId zoneId = offset.getRules().getOffset(Instant.now()).query(TemporalQueries.zone());
             String displayName = zoneId.getDisplayName(TextStyle.FULL, Locale.getDefault());
 
-            logger.debug("Your time zone offset: " + offset.getId());
+            logger.debug("Your time zone offset is [{}], and your timezone ID is [{}]", offset.getId(), details.getTimeZoneId());
 
             //dialogueTimeZoneNotification.setText("Your time zone is [" + displayName + "]");
 
@@ -170,7 +172,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         addReminderButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         this.setHorizontalComponentAlignment(Alignment.CENTER, addReminderButton);
         addReminderButton.addClickListener(event -> {
-            ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey("NEVER");
+            ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey(NEVER_REPEAT_KEY);
             this.reminderConfig = new ReminderConfig();
             reminderConfig.setReminderRepeatType(neverRepeat);
             binder.setBean(reminderConfig);
@@ -191,9 +193,9 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Set up the columns
         remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
-        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Headline").setKey("headline").setSortable(true);
+        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder Topic").setKey("reminderTopic").setSortable(true);
         remindersGrid.addColumn(item -> item.getReminderRepeatType().getName()).setHeader("Repeat").setKey("repeat").setSortable(true);
-        remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate().format(gridDisplayDateFormatter))
+        Grid.Column<ReminderConfig> startDateColumn = remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate().format(gridDisplayDateFormatter))
                 .setHeader("Reminder Date/Start Date").setKey("startDate").setSortable(true);
         remindersGrid.addColumn(reminderConfig -> {
             if (reminderConfig.getEndDate() != null) {
@@ -203,18 +205,34 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             }
         }).setHeader("Reminder End Date").setKey("endDate").setSortable(true);
 
-        Grid.Column<ReminderConfig> createdOnColumn = remindersGrid.addColumn(item -> item.getCreatedDate().format(gridDisplayDateFormatter)).setHeader("Created On").setKey("createdOn").setSortable(true);
-
+        //Grid.Column<ReminderConfig> createdOnColumn = remindersGrid.addColumn(item -> item.getCreatedDate().format(gridDisplayDateFormatter)).setHeader("Created On").setKey("createdOn").setSortable(true);
 
         //Add the edit button
         remindersGrid.addComponentColumn(reminderConfig -> {
             Button editRowButton = VaadinConstants.editButton();
 
             editRowButton.addClickListener(event -> {
-                binder.setBean(reminderConfig);
-                this.reminderConfig = reminderConfig;
+                //Refresh the reminderConfig
+                Optional<ReminderConfig> reminderConfigOptional = reminderConfigRepository.findById(reminderConfig.getId());
+                if (reminderConfigOptional.isPresent()) {
+                    this.reminderConfig = reminderConfigOptional.get();
+                } else {
+                    logger.error("Could not find reminder config with ID [{}]", reminderConfig.getId());
+                    this.reminderConfig = reminderConfig; //Just use the one we have if we can't refresh the other one
+                }
+
                 deleteButton.setVisible(true);
                 editing = true;
+
+                //Check if end date should be enabled
+                if (this.reminderConfig.getReminderRepeatType().getKey().equals(NEVER_REPEAT_KEY)) {
+                    endDate.setEnabled(false);
+                } else {
+                    endDate.setEnabled(true);
+                }
+
+                binder.setBean(reminderConfig);
+
                 editReminderConfigDialog.open();
             });
 
@@ -241,7 +259,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Set the default sort order
         List<GridSortOrder<ReminderConfig>> sortOrderList = new ArrayList<>();
-        sortOrderList.add(new GridSortOrder<>(createdOnColumn, SortDirection.DESCENDING));
+        sortOrderList.add(new GridSortOrder<>(startDateColumn, SortDirection.DESCENDING));
         remindersGrid.sort(sortOrderList);
 
         //Turn off the selection mode
