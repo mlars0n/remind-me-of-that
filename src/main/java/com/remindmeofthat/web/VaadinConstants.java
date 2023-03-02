@@ -32,10 +32,12 @@ public class VaadinConstants {
     }
 
     public static Button cancelButton() {
-        //Button cancelButton = new Button("Cancel", new Icon(VaadinIcon.CLOSE));
-        Button cancelButton = new Button("Cancel", new Icon("lumo", "cross"));
-        return cancelButton;
-        //return new Button("Cancel", new Icon("lumo", "cross"));
-
+        return new Button("Cancel", new Icon("lumo", "cross"));
     }
+
+    public static Button disableButton() {
+        return new Button("Disable", new Icon("lumo", "eye-disabled"));
+    }
+
+
 }

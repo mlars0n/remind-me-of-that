@@ -88,6 +88,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     Button saveButton = VaadinConstants.saveButton();
     Button cancelButton = VaadinConstants.cancelButton();
+
+    Button disableButton = VaadinConstants.disableButton();
     Button deleteButton = VaadinConstants.deleteButton();
 
     //Grid setup
@@ -403,7 +405,8 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Put delete over on the right side
         buttonActions.setSizeFull();
-        deleteButton.getStyle().set("margin-left", "auto");
+        //deleteButton.getStyle().set("margin-left", "auto");
+        disableButton.getStyle().set("margin-left", "auto");
 
         //Cancel action
         cancelButton.addClickListener(event -> {
@@ -443,7 +446,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             }
         });
 
-        buttonActions.add(saveButton, cancelButton, deleteButton);
+        buttonActions.add(saveButton, cancelButton, disableButton, deleteButton);
 
         return buttonActions;
     }
