@@ -11,6 +11,7 @@ import com.remindmeofthat.service.ReminderUserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -88,9 +89,6 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     Button saveButton = VaadinConstants.saveButton();
     Button cancelButton = VaadinConstants.cancelButton();
-
-    Button disableButton = VaadinConstants.disableButton();
-    Button deleteButton = VaadinConstants.deleteButton();
 
     //Grid setup
     Grid<ReminderConfig> remindersGrid = new Grid<>();
@@ -178,7 +176,6 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             this.reminderConfig = new ReminderConfig();
             reminderConfig.setReminderRepeatType(neverRepeat);
             binder.setBean(reminderConfig);
-            deleteButton.setVisible(false); //Don't display the delete button if we are adding a new one
             editing = false;
             editReminderConfigDialog.open();
         });
@@ -195,53 +192,19 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Set up the columns
         remindersGrid.addColumn(createToggleDetailsRenderer()).setWidth("7em").setFlexGrow(0);
-        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Reminder Topic").setKey("reminderTopic").setSortable(true);
+        remindersGrid.addColumn(item -> item.getSubject()).setHeader("Topic").setKey("reminderTopic").setSortable(true);
         remindersGrid.addColumn(item -> item.getReminderRepeatType().getName()).setHeader("Repeat").setKey("repeat").setSortable(true);
         Grid.Column<ReminderConfig> startDateColumn = remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate().format(gridDisplayDateFormatter))
-                .setHeader("Reminder Date/Start Date").setKey("startDate").setSortable(true);
+                .setHeader("Start Date").setKey("startDate").setSortable(true);
         remindersGrid.addColumn(reminderConfig -> {
             if (reminderConfig.getEndDate() != null) {
                 return reminderConfig.getEndDate().format(gridDisplayDateFormatter);
             } else {
                 return "n/a";
             }
-        }).setHeader("Reminder End Date").setKey("endDate").setSortable(true);
+        }).setHeader("End Date").setKey("endDate").setSortable(true);
+        remindersGrid.addColumn(createManageReminderRenderer()).setHeader("Manage Reminder").setKey("manageReminder").setSortable(false);
 
-        //Grid.Column<ReminderConfig> createdOnColumn = remindersGrid.addColumn(item -> item.getCreatedDate().format(gridDisplayDateFormatter)).setHeader("Created On").setKey("createdOn").setSortable(true);
-
-        //Add the edit button
-        remindersGrid.addComponentColumn(reminderConfig -> {
-            Button editRowButton = VaadinConstants.editButton();
-
-            editRowButton.addClickListener(event -> {
-                //Refresh the reminderConfig
-                Optional<ReminderConfig> reminderConfigOptional = reminderConfigRepository.findById(reminderConfig.getId());
-                if (reminderConfigOptional.isPresent()) {
-                    this.reminderConfig = reminderConfigOptional.get();
-                } else {
-                    logger.error("Could not find reminder config with ID [{}]", reminderConfig.getId());
-                    this.reminderConfig = reminderConfig; //Just use the one we have if we can't refresh the other one
-                }
-
-                deleteButton.setVisible(true);
-                editing = true;
-
-                //Check if end date should be enabled
-                if (this.reminderConfig.getReminderRepeatType().getKey().equals(NEVER_REPEAT_KEY)) {
-                    endDate.setEnabled(false);
-                } else {
-                    endDate.setEnabled(true);
-                }
-
-                binder.setBean(reminderConfig);
-
-                editReminderConfigDialog.open();
-            });
-
-            return editRowButton;
-        }).setHeader("Edit");
-
-        //remindersGrid.setWidthFull();
         remindersGrid.setSizeFull();
 
         //Set up the details renderer
@@ -266,6 +229,66 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Turn off the selection mode
         remindersGrid.setSelectionMode(Grid.SelectionMode.NONE);
+    }
+
+    //Render the manage reminders button
+    private ComponentRenderer<HorizontalLayout, ReminderConfig> createManageReminderRenderer() {
+        return new ComponentRenderer<>(reminderConfig -> {
+            HorizontalLayout reminderRowButtonLayout = new HorizontalLayout();
+
+            Button editRowButton = VaadinConstants.editButton();
+            editRowButton.setTooltipText("Edit reminder");
+            Button disableRowButton = VaadinConstants.disableButton();
+            disableRowButton.setTooltipText("Disable reminder");
+
+            Button deleteRowButton = VaadinConstants.deleteButton();
+            deleteRowButton.setTooltipText("Delete reminder");
+
+            //Configure the edit button
+            editRowButton.addClickListener(event -> {
+                //Refresh the reminderConfig
+                Optional<ReminderConfig> reminderConfigOptional = reminderConfigRepository.findById(reminderConfig.getId());
+                if (reminderConfigOptional.isPresent()) {
+                    this.reminderConfig = reminderConfigOptional.get();
+                } else {
+                    logger.error("Could not find reminder config with ID [{}]", reminderConfig.getId());
+                    this.reminderConfig = reminderConfig; //Just use the one we have if we can't refresh the other one
+                }
+
+                editing = true;
+
+                //Check if end date should be enabled
+                if (this.reminderConfig.getReminderRepeatType().getKey().equals(NEVER_REPEAT_KEY)) {
+                    endDate.setEnabled(false);
+                } else {
+                    endDate.setEnabled(true);
+                }
+
+                binder.setBean(reminderConfig);
+
+                editReminderConfigDialog.open();
+            });
+
+            //Configure the delete button using a confirm dialog
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("Delete Reminder?");
+            dialog.setText("Are you sure you want to delete this reminder? This removes all reminder " +
+                    " configuration and history. To stop reminders, but keep configuration and history, disable this reminder instead.");
+            dialog.setCancelable(true);
+            dialog.setConfirmText("Delete Reminder");
+            dialog.setConfirmButtonTheme("error primary");
+            dialog.addConfirmListener(event -> {
+                reminderConfigRepository.delete(reminderConfig);
+                remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
+            });
+
+            deleteRowButton.addClickListener(event -> {
+                dialog.open();
+            });
+
+            reminderRowButtonLayout.add(editRowButton, disableRowButton, deleteRowButton);
+            return reminderRowButtonLayout;
+        });
     }
 
     private TemplateRenderer<ReminderConfig> createToggleDetailsRenderer() {
@@ -402,11 +425,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     private HorizontalLayout createDialogButtons() {
         HorizontalLayout buttonActions = new HorizontalLayout();
-
-        //Put delete over on the right side
         buttonActions.setSizeFull();
-        //deleteButton.getStyle().set("margin-left", "auto");
-        disableButton.getStyle().set("margin-left", "auto");
 
         //Cancel action
         cancelButton.addClickListener(event -> {
@@ -446,7 +465,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             }
         });
 
-        buttonActions.add(saveButton, cancelButton, disableButton, deleteButton);
+        buttonActions.add(saveButton, cancelButton);
 
         return buttonActions;
     }

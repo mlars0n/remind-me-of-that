@@ -23,10 +23,6 @@ public class VaadinConstants {
         return new Button(new Icon("lumo", "cog"));
     }
 
-    public static Button deleteButton() {
-        return new Button("Delete", new Icon(VaadinIcon.TRASH));
-    }
-
     public static Button backButton() {
         return new Button("Back", new Icon(VaadinIcon.ENTER_ARROW));
     }
@@ -36,8 +32,14 @@ public class VaadinConstants {
     }
 
     public static Button disableButton() {
-        return new Button("Disable", new Icon("lumo", "eye-disabled"));
+        return new Button(new Icon("lumo", "eye-disabled"));
     }
 
+    public static Button enableButton() {
+        return new Button(new Icon("lumo", "eye"));
+    }
 
+    public static Button deleteButton() {
+        return new Button(new Icon(VaadinIcon.TRASH));
+    }
 }
