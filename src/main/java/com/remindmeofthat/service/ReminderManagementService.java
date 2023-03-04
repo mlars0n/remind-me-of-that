@@ -46,6 +46,9 @@ public class ReminderManagementService {
 
         ZoneOffset zoneOffset = ZoneOffset.ofHours(timeZoneOffset);
 
+        //Make sure this is default enabled
+        reminderConfig.setEnabled(true);
+
         //Create a recurring reminder if one is called for
         if (!reminderConfig.getReminderRepeatType().getKey().equalsIgnoreCase("NEVER")) {
             createRepeatingReminder(reminderConfig, zoneOffset);

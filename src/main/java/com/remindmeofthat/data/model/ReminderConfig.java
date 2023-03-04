@@ -25,8 +25,8 @@ public class ReminderConfig extends BaseEntityZonedDates {
     @Column(name ="end_date", nullable = true)
     private OffsetDateTime endDate;
 
-    @Column(name = "disabled", nullable = false)
-    private boolean disabled;
+    @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")
+    private boolean enabled;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -96,12 +96,12 @@ public class ReminderConfig extends BaseEntityZonedDates {
         this.endDate = endDate;
     }
 
-    public boolean getDisabled() {
-        return disabled;
+    public boolean getEnabled() {
+        return enabled;
     }
 
-    public void setDisabled(boolean disabled) {
-        this.disabled = disabled;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public ReminderRepeatType getReminderRepeatType() {

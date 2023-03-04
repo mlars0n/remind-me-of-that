@@ -153,7 +153,7 @@
             </column>
 
             <!-- The end date of the reminder, i.e. when to stop sending them -->
-            <column name="disabled" type="boolean" defaultValue="false">
+            <column name="enabled" type="boolean" defaultValue="true">
                 <constraints nullable="false"/>
             </column>
 
