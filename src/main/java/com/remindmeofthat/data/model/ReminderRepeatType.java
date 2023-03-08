@@ -6,6 +6,26 @@ import java.util.Objects;
 @Entity
 @Table(name = "reminder_repeat_type")
 public class ReminderRepeatType extends BaseEntityZonedDates {
+
+    //Create an enum to track the keys for the repeat types
+    public enum RepeatTypeKey {
+        NEVER("NEVER"),
+        DAILY("DAILY"),
+        WEEKLY("WEEKLY"),
+        MONTHLY("MONTHLY"),
+        YEARLY("YEARLY");
+
+        private String key;
+
+        RepeatTypeKey(String key) {
+            this.key = key;
+        }
+
+        public String getKey() {
+            return key;
+        }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -64,3 +84,5 @@ public class ReminderRepeatType extends BaseEntityZonedDates {
         return Objects.hash(key);
     }
 }
+
+

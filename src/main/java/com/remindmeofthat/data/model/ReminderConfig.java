@@ -22,7 +22,7 @@ public class ReminderConfig extends BaseEntityZonedDates {
     @Column(name ="start_date", nullable = false)
     private OffsetDateTime startDate;
 
-    @Column(name ="end_date", nullable = true)
+    @Column(name ="end_date", nullable = false)
     private OffsetDateTime endDate;
 
     @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")

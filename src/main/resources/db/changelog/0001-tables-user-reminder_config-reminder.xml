@@ -149,7 +149,7 @@
 
             <!-- The end date of the reminder, i.e. when to stop sending them -->
             <column name="end_date" type="timestamp(3) with time zone">
-                <constraints nullable="true"/>
+                <constraints nullable="false"/>
             </column>
 
             <!-- The end date of the reminder, i.e. when to stop sending them -->

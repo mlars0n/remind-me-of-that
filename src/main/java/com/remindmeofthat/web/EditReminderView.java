@@ -29,6 +29,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.provider.ListDataView;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
@@ -97,8 +98,6 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
     //Whether we are editing within the dialog or not (if not, we are adding a reminder)
     boolean editing = false;
-
-    private String NEVER_REPEAT_KEY = "NEVER";
 
     public EditReminderView(@Autowired ReminderUserService reminderService, @Autowired ReminderUserRepository reminderUserRepository,
                             @Autowired ReminderConfigRepository reminderConfigRepository, @Autowired ReminderManagementService reminderManagementService,
@@ -174,7 +173,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         addReminderButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         this.setHorizontalComponentAlignment(Alignment.CENTER, addReminderButton);
         addReminderButton.addClickListener(event -> {
-            ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey(NEVER_REPEAT_KEY);
+            ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey(ReminderRepeatType.RepeatTypeKey.NEVER.getKey());
             this.reminderConfig = new ReminderConfig();
             reminderConfig.setReminderRepeatType(neverRepeat);
             binder.setBean(reminderConfig);
@@ -199,11 +198,12 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         Grid.Column<ReminderConfig> startDateColumn = remindersGrid.addColumn(reminderConfig -> reminderConfig.getStartDate().format(gridDisplayDateFormatter))
                 .setHeader("Start Date").setKey("startDate").setSortable(true);
         remindersGrid.addColumn(reminderConfig -> {
-            if (reminderConfig.getEndDate() != null) {
+           /* if (!reminderConfig.getReminderRepeatType().getKey().equals(ReminderRepeatType.RepeatTypeKey.NEVER.getKey())) {
                 return reminderConfig.getEndDate().format(gridDisplayDateFormatter);
             } else {
                 return "n/a";
-            }
+            }*/
+            return reminderConfig.getEndDate().format(gridDisplayDateFormatter);
         }).setHeader("End Date").setKey("endDate").setSortable(true);
 
         //Add enabled/disabled column using lumo icons
@@ -220,19 +220,18 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         remindersGrid.setSizeFull();
 
         //Set up the details renderer
-        remindersGrid.setItemDetailsRenderer(
+       /* remindersGrid.setItemDetailsRenderer(
                 new ComponentRenderer<>(reminderConfig -> {
                     //VerticalLayout reminderDetailsLayout = new VerticalLayout();
                     Paragraph paragraph = new Paragraph();
                     //paragraph.add(reminderConfig.getBody());
-                    paragraph.add("This reminder was created on Jan 29, 2023. It is set to only be sent once. It's one reminder " +
-                            "was sent on Feb 26, 2023. No new reminders will be sent. ");
+                    paragraph.add("Explanatory text here");
 
                     return paragraph;
-                }));
+                }));*/
 
         //Set the items
-        remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
+        ListDataView reminderGridItems = remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
 
         //Set the default sort order
         List<GridSortOrder<ReminderConfig>> sortOrderList = new ArrayList<>();
@@ -240,7 +239,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         remindersGrid.sort(sortOrderList);
 
         //Turn off the selection mode
-        remindersGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
+        remindersGrid.setSelectionMode(Grid.SelectionMode.NONE);
     }
 
     //Render the manage reminders button
@@ -292,7 +291,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         reminderRepeatType.setLabel("Repeat Reminder");
         reminderRepeatType.setWidth("15em");
         List<ReminderRepeatType> reminderRepeatTypes = reminderRepeatTypeRepository.findAll();
-        ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey("NEVER");
+        ReminderRepeatType neverRepeat = reminderRepeatTypeRepository.findReminderRepeatTypeByKey(ReminderRepeatType.RepeatTypeKey.NEVER.getKey());
         reminderRepeatType.setItemLabelGenerator(ReminderRepeatType::getName);
         reminderRepeatType.setItems(reminderRepeatTypes);
 
@@ -344,7 +343,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         binder.forField(endDate)
                 .withConverter(localDateFromUi -> {
-                            //If the end date is not enabled, return null
+                            //If the end date is not enabled, or this is a "NEVER" type reminder, return null
                             if (!endDate.isEnabled()) {
                                 return null;
                             } else {
@@ -384,6 +383,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
 
         //Cancel action
         cancelButton.addClickListener(event -> {
+            //binder.
             editReminderConfigDialog.close();
         });
 
@@ -391,7 +391,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
         saveButton.addClickListener(event -> {
             try {
 
-                //Write this back to the binder object
+                //Write this back to the reminder config object
                 binder.writeBean(reminderConfig);
 
                 //Set the user that you got from the ID
@@ -426,7 +426,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
     }
 
     private ComponentRenderer<HorizontalLayout, ReminderConfig> createManageReminderRenderer() {
-        return new ComponentRenderer<>(reminderConfig -> {
+        return new ComponentRenderer<>(localReminderConfig -> {
             HorizontalLayout reminderRowButtonLayout = new HorizontalLayout();
 
             Button editRowButton = VaadinConstants.editButton();
@@ -441,11 +441,11 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             disableRowConfirmDialog.setCancelable(true);
             disableRowConfirmDialog.setConfirmText("Disable Reminder");
             disableRowConfirmDialog.addConfirmListener(event -> {
-                reminderConfig.setEnabled(!reminderConfig.getEnabled());
-                reminderConfigRepository.save(reminderConfig);
+                localReminderConfig.setEnabled(!localReminderConfig.getEnabled());
+                reminderConfigRepository.save(localReminderConfig);
                 remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
             });
-            if (reminderConfig.getEnabled()) {
+            if (localReminderConfig.getEnabled()) {
                 disableRowButton = VaadinConstants.enableButton();
                 disableRowButton.setTooltipText("Disable reminder");
 
@@ -455,11 +455,12 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             } else {
                 disableRowButton = VaadinConstants.disableButton();
                 disableRowButton.setTooltipText("Enable reminder");
+                disableRowButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
 
                 //Set up the actions that will lead the reminder to be enabled or disabled
                 disableRowButton.addClickListener(event -> {
-                    reminderConfig.setEnabled(!reminderConfig.getEnabled());
-                    reminderConfigRepository.save(reminderConfig);
+                    localReminderConfig.setEnabled(!localReminderConfig.getEnabled());
+                    reminderConfigRepository.save(localReminderConfig);
                     remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
                 });
             }
@@ -472,24 +473,26 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             //Configure the edit button
             editRowButton.addClickListener(event -> {
                 //Refresh the reminderConfig
-                Optional<ReminderConfig> reminderConfigOptional = reminderConfigRepository.findById(reminderConfig.getId());
+                Optional<ReminderConfig> reminderConfigOptional = reminderConfigRepository.findById(localReminderConfig.getId());
                 if (reminderConfigOptional.isPresent()) {
+                    logger.debug("Refreshing reminder config with ID [{}]", localReminderConfig.getId());
                     this.reminderConfig = reminderConfigOptional.get();
                 } else {
-                    logger.error("Could not find reminder config with ID [{}]", reminderConfig.getId());
-                    this.reminderConfig = reminderConfig; //Just use the one we have if we can't refresh the other one
+                    logger.error("Could not find reminder config with ID [{}]", localReminderConfig.getId());
+                    this.reminderConfig = localReminderConfig; //Just use the one we have if we can't refresh the other one
                 }
 
                 editing = true;
 
-                //Check if end date should be enabled
-                if (this.reminderConfig.getReminderRepeatType().getKey().equals(NEVER_REPEAT_KEY)) {
+                //Check if end date should be enabled, and also clear out the value if NEVER is used
+                if (this.reminderConfig.getReminderRepeatType().getKey().equals(ReminderRepeatType.RepeatTypeKey.NEVER.getKey())) {
                     endDate.setEnabled(false);
+                    this.reminderConfig.setEndDate(null);
                 } else {
                     endDate.setEnabled(true);
                 }
 
-                binder.setBean(reminderConfig);
+                binder.setBean(this.reminderConfig);
 
                 editReminderConfigDialog.open();
             });
@@ -503,7 +506,7 @@ public class EditReminderView extends VerticalLayout implements BeforeEnterObser
             dialog.setConfirmText("Delete Reminder");
             dialog.setConfirmButtonTheme("error primary");
             dialog.addConfirmListener(event -> {
-                reminderConfigRepository.delete(reminderConfig);
+                reminderConfigRepository.delete(localReminderConfig);
                 remindersGrid.setItems(reminderConfigRepository.findReminderConfigByReminderUserOrderByCreatedDateDesc(reminderUser));
             });
 
